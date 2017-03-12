@@ -1,0 +1,67 @@
+---
+title: "Capstone Project Proposal"
+author: "Paddy"
+date: "12 March 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+#Capstone Project Proposal
+
+##1.	What is the problem you want to solve?
+The scope of this project is to better filter/screen applicants for a loan with Lending Club and ultimately reduce the amount of delinquent loans from approved applicants. There is a current screening process however, applicants can slip through the system by meeting certain criteria. The aim is to refine this model to eliminate the highest percentage possible of fraudulent applicants.
+
+##2.	Who is your client and why do they care about this problem? In other words, what will they do or decide based on your analysis?
+The client is Lending Club – the largest online credit marketplace – where borrowers can apply for loans funded by investors who select the loans they want to add to their portfolio and make profit on interest rates. 
+As with any bank, Lending Club assesses the applicant’s risk and if successful, applies a credit rating and determines the appropriate interest rate. Likewise, if the applicant’s risk is deemed too high, the loan will be rejected. One of Lending Club’s biggest challenges is ensuring that repayments are made and trying to filter out delinquent/default loans through robust screening. As of June 2015, Lending Club’s annual default rate across all grades was about 7%. A reduction in the default rate will reduce the risk of the loan and make the investment more attractive for investors. 
+If I can create a model that better screens applicants, Lending Club can better determine likely default loan applicants and hence achieve a lower default rate on their loans. This reduced risk can be more attractive to investors and hence can increase the overall investment in Lending Club. 
+
+##3.	What data are you going to use for this? How will you acquire it?
+I will be working with 2 data sets which I will acquire from the Lending Club website:
+1. Reject Loan data 
+2. Amount 
+3. Loan title
+4. Debt-to-Income ratio
+5. Employment length
+6. Risk score
+7. Accepted Loan data
+8. Amount
+9. Loan title
+10. Debt-to-Income ratio
+11. Interest rate
+12. Loan grade
+13. Loan status
+14. Previous delinquency history
+15. Days delinquent
+
+##4.	Outline your approach to solving this problem. 
+The main strategy is to unveil trends in delinquent approved loans and use this data to develop a model to more successfully screen potential loan delinquents. The strategy will be as follows:
+
+###a)	Reject Loan data
+**Aim** – to determine why these loans were deemed as too risky and why the loan was rejected. 
+**Method** – analyse trends in the data set to determine a criterion as to why an applicant may be too risky for a loan. For example, the amount requested – to – income ratio is too high, the applicant is unemployed or employed for too short a time, their risk score is too high etc. The answer will be a collaboration of these factors. 
+**Expected result** – a trend to show a reject criteria i.e. what does it take to not be approved for a loan with Lending Club?
+
+###b)	Approved Loan data (entire data set)
+**Aim** – to determine why these loans were approved. 
+**Method** – analyse all relevant variables collaboratively to unveil trends in the approved applicants.
+**Expected result** – a trend to show an approved criteria i.e. what does it take to get a loan with Lending Club?
+
+###c)	Approved Loan data (using delinquent applicants)
+**Aim** – to determine why these loans are delinquent
+**Method** – analyse relevant variables of just delinquent loans.
+**Expected result** – a trend to show common factors in the delinquency of a loan. This may be broken down into willingness (choose not to pay the loan) and ability (unable to pay the loan). May also be broken down into delinquency (late repayments) and default (overdue repayments that have exceeded a certain time period).
+
+###d)	Rejected Loan data and Approved Loan data (using delinquent applicants)
+**Aim** – to compare both data sets and trends and find commonalities.
+**Method** – using the output of section a) and section c).
+**Expected result** – there will be a trend/pattern in the delinquent/default loans from the approved loan data and the rejected loan data. The commonalities can be used to refine the approved criteria from section b) and produce the refined approved criteria which can reduce the number of delinquents that slip through the original screening process. 
+
+##5.	What are your deliverables?
+I plan to use R-studio in tandem with R-markdown for this project. R-markdown will be used to create a readme file which will be used for the presentation of the data analysis as well as the code used and any relevant comments on the method.
+I plan to create a GitHub account to present my work and use this to kickstart my portfolio. 
