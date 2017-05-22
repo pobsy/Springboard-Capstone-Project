@@ -59,17 +59,6 @@ From the initial exploration of the available data, the following features will 
       * DTI
       * Amount
       * Employment length
-      
-Carrying out a brief summary on these features in both data sets:
-
-
-```{r}
-describe.by(lc1$fico_range_low, lc1$dti)
-describe.by(lc1$dti)
-describe.by(lc1$loan_amnt)
-describe.by(lc1$emp_length)
-```
-**************The brief comparative analysis here shows that the min and max values between the corresponding features in the data sets are similar - nothing stands out as being higher/lower than the other. This may also be a limitation but further analysis should show a difference.**************
 
 
 ## Data Wrangling and Cleaning 
@@ -80,7 +69,7 @@ However, there were quite a few features that would not be required for the anal
 
 The main libraries required for the data wrangling and cleaning were acquired when the relevant data set was imported. 
 
-```{r}
+```{r eval =FALSE}
 library(tidyr)
 library(dplyr)
 library(readr)
@@ -92,7 +81,8 @@ The following shows the steps undertaken to transform the data into a desirable 
 ### Deleting features
 The first task was to delete any obvious columns that would not be of any benefit for the analysis. Once this was done, further investigation into each feature was carried out to determine the percentage of "NA" fields, deleting anything greater than 80% NA.  
 
-```{r}
+```{r eval = FALSE}
+lc = LC_data
 missing_values <- sapply(lc, function(x) {
   percentage <- sum(is.na(x))/length(x)
   percentage < 0.2
@@ -102,17 +92,17 @@ lc
 ```
 Any features with only one unique value were also deleted from the data set, as these would not add any value to the analysis.
 
-```{r}
+```{r eval = FALSE}
 unique_values2 <- sapply(lc, function(x) {
 size <- length(unique(x[!is.na(x)]))
 size > 1
-})
+   })
 lc <- lc[, unique_values2 == TRUE]
 ```
 ### Formatting
 The main formatting carried out on the data sets involved transforming variables from a character to a numberic format. This first involved removing any non numeric text/values such as "yrs", "months" and "%", "+" and ">" signs. The main variables that were formatted in this manner were interest rate, term, employment length and revolving utilisation.
 
-```{r}
+```{r eval = FALSE}
 lc$term <- gsub("months", "", lc$term)
 lc$term <- as.numeric(lc$term)
 ```
@@ -120,28 +110,28 @@ The issue date feature "issue_d" was also formatted from a "character" to a "dat
 
 One of the most valuable features from this data set is "loan status". This categorises each loan into one of seven observations to represent the current status of the loan. For the purpose of the analysis, these status' were separated into 2 groups - good indicators that represent if a loan is still on track to be fully paid off without default or delay, and bad indicators which represent default or delay. These 2 indicator groups were then assigned a binary in the new column "bad_indicators". This will be very helpful in the analysis, particularly for the development of the predictive model.
 
-```{r}
+```{r eval = FALSE}
 bad_indicators <- c("Late (16-30 days)", "Late (31-120 days)", "Default", "Charged Off")
 lc$is_bad <- ifelse(lc$loan_status %in% bad_indicators, 1,
                     ifelse(lc$loan_status=="", NA,
-                    0))
+                   0))
 ```
 ### Data normalisation and One Hot Encoding
 In order to improve prediction accuracy in the predictive model, the FICO feature was normalised. The standardizing method was used as it allows for centre and scale to be specified in the code and hence, is easily transferable between different data sets (i.e. between approved and rejected data). 
 
-```{r}
+```{r eval = FALSE}
 lc$fico_norm <- scale(lc$fico_range_mean, center = TRUE, scale = TRUE)
 
 ```
 The final step in the data wrangling was to apply One Hot Encoding to features of paricular interest. The rule of thumb is that OHE can be applied to features of between 2 and 30 unique values. 
 
-```{r}
+```{r eval =FALSE}
 
 library(ade4)
 
- lc_OHE = lc
- ohe_feats = c('term_mths', 'grade', 'emp_length_yrs', 'home_ownership', 'verification_status', 'loan_status', 'pymnt_plan', 'purpose', 'delinq_2yrs', 'inq_last_6mths', 'pub_rec', 'pub_rec_bankruptcies')
- for(f in ohe_feats) {
+lc_OHE = lc
+  ohe_feats = c('term_mths', 'grade', 'emp_length_yrs', 'home_ownership', 'verification_status',   'loan_status', 'pymnt_plan', 'purpose', 'delinq_2yrs', 'inq_last_6mths', 'pub_rec', 'pub_rec_bankruptcies')
+for(f in ohe_feats) {
      df_dummy1 = acm.disjonctif(as.data.frame(as.factor(unlist(lc[f])))) 
      lc_OHE = cbind(lc_OHE, df_dummy1)
 
@@ -156,7 +146,7 @@ Similiar wrangling was carried out for the rejected loan data set.
 ### Approved and Rejected Data - Combined Data Set
 The 2 data sets were then combined using the union() function. Firstly, a "status" feature was added to both data sets, which was set to either "rejected" or "approved" depending on the data set. Just the relevant columns were selected from the approved data set, and the names of both columns were changed to allow for the columns to be joined together. 
 
-```{r}
+```{r eval = FALSE}
 lc_comparison = lc
 lc_comparison <- select(lc_comparison, emp_length_yrs, loan_amnt, issue_d, fico_range_mean, loan_status, dti)
 lc_comparison <- lc_comparison  %>% mutate("Status" = "approved")
@@ -180,9 +170,14 @@ The following are the variables to be investigated in this section:
 
 This will be done by plotting the density of 2 factors in is_bad (0/good/red and 1/bad/blue)) against each of the variables of interest. 
       
-### fico_mean
+### Fico_mean
   
-```{r}
+```{r eval = TRUE, warning= FALSE, error = FALSE, message = FALSE}
+library(readr)
+lc_cleaned <- read_csv("~/Springboard/Capstone project/New folder/lc_cleaned.csv")
+
+lc = lc_cleaned
+
 library(ggplot2)
 p <- ggplot(lc, aes(x = fico_range_mean, group = is_bad, color = factor(is_bad)))
 p + geom_density()
@@ -191,15 +186,16 @@ p
 As expected there is a difference between the 2 status' for this variable which suggests that a higher FICO score is more desirable with higher rates of defaulted loans witnessed in lower FICO ranges.
 
 ### DTI
-```{r}
+```{r echo = FALSE, warning= FALSE, error = FALSE, message = FALSE}
+
 p1 <- ggplot(lc, aes(x = dti, group = is_bad, color = factor(is_bad)))
 p1 + geom_density()
-p1
+p1 
 ```
 DTI is quite evenly spread however there is a slight tendency of higher DTI's to result in more bad loans hence confirming that the lower the DTI value the more likely the loan is to be successfully paid off. It is worth looking into further. 
 
 ### Loan Amount
-```{r}
+```{r echo = FALSE, warning= FALSE, error = FALSE, message = FALSE}
 p2 <- ggplot(lc, aes(x = loan_amnt, group = is_bad, color = factor(is_bad)))
 p2 + geom_density()
 p2
@@ -207,7 +203,7 @@ p2
 Apart from loans of smaller amounts having more of a success of being fully paid off, the spread is quite even along the graph and does not suggest much of a relationship between the chance of failure and success.
 
 ### Employment length
-```{r}
+```{r echo = FALSE, warning= FALSE, error = FALSE, message = FALSE}
 p3 <- ggplot(lc, aes(x = emp_length_yrs, group = is_bad, color = factor(is_bad)))
 p3 + geom_density()
 p3
@@ -215,7 +211,7 @@ p3
 Similar to Loan Amount, apart from 10 plus years of employment, there is no stark difference between the 2 observations. 
 
 ### Term
-```{r}
+```{r echo = FALSE, warning= FALSE, error = FALSE, message = FALSE}
 p4 <- ggplot(lc, aes(x = term_mths, group = is_bad, color = factor(is_bad)))
 p4 + geom_density()
 p4
@@ -223,7 +219,7 @@ p4
 Interestingly, the shorter the term, the more likely the loan is to succeed. This is definitely worth looking into further. 
 
 ### Interest Rate
-```{r}
+```{r echo = FALSE, warning= FALSE, error = FALSE, message = FALSE}
 p5 <- ggplot(lc, aes(x = int_rate_percent, group = is_bad, color = factor(is_bad)))
 p5 + geom_density()
 p5
@@ -231,7 +227,7 @@ p5
 Similar to DTI, it would be expected that the lower the interest rate on the loan, the greater the chance of success as the interest rate is assigned based on the risk of the loan which is derived from the applicant's credit history. 
 
 ### Grade
-```{r}
+```{r echo = FALSE, warning= FALSE, error = FALSE, message = FALSE}
 p6 <- ggplot(lc, aes(x = grade, group = is_bad, color = factor(is_bad)))
 p6 + geom_density()
 p6
@@ -239,7 +235,7 @@ p6
 Grade appears to be similar to the interest rate in the fact that the grades which are deemed to be less risky are less likely to default i.e. A-grades are less likely to default while G-grades are more likely to default. It may be worth looking at the relationship between grade and interest rate later in the data exploration to determine the correlation between the two. 
 
 ### Home Ownership
-```{r}
+```{r echo = FALSE, warning= FALSE, error = FALSE, message = FALSE}
 p7 <- ggplot(lc, aes(x = home_ownership, group = is_bad, color = factor(is_bad)))
 p7 + geom_density()
 p7
@@ -247,7 +243,7 @@ p7
 The two main observations in "home_ownership" are "rent" and "mortgage". The expectation would be that home owners would be more likely to repay their loans (which is the case) while renters would be more likely to default (which is not the case). There is not as much of a difference between the 2 of these observations as expected.  
 
 ### Annual Income
-```{r}
+```{r echo = FALSE, warning= FALSE, error = FALSE, message = FALSE}
 p8 <- ggplot(lc, aes(x = annual_inc, group = is_bad, color = factor(is_bad)))
 p8 + geom_density()
 p8
@@ -255,7 +251,7 @@ p8
 There appears to be a consistent correlation between incomes for good and bad loans hence, this will not be investigated further.  
 
 ### Inquiries in the last 6 months
-```{r}
+```{r echo = FALSE, warning= FALSE, error = FALSE, message = FALSE}
 p9 <- ggplot(lc, aes(x = inq_last_6mths, group = is_bad, color = factor(is_bad)))
 p9 + geom_density()
 p9
@@ -263,7 +259,7 @@ p9
 This graph shows that if the applicant has 0 inquiries they have a better chance of a good loan. There is a relatively consistent trend after this where there is not a major difference between the number of inquiries and the success of the loan.
 
 ### Revolution util
-```{r}
+```{r echo = FALSE, warning= FALSE, error = FALSE, message = FALSE}
 p9 <- ggplot(lc, aes(x = revol_util, group = is_bad, color = factor(is_bad)))
 p9 + geom_density()
 p9
@@ -271,7 +267,7 @@ p9
 There is a very clear difference here between good and bad loans. The graph suggests that the lower the Revol Util, the better chance of successfully repaying the loan. 
 
 ### Purpose
-```{r}
+```{r echo = FALSE, warning= FALSE, error = FALSE, message = FALSE}
 p10 <- ggplot(lc, aes(x = purpose, group = is_bad, color = factor(is_bad)))
 p10 + geom_density()
 p10
@@ -280,8 +276,7 @@ There are 4 main peaks in the graph with significant differences between the goo
 
 ## Approach
 
-The inital exploration has been useful to understand the interesting trends in the data and to give an indication of what will be worth exploring in more detail. There is a slight shift from the original plan in the Capstone proposal however the main goal of the project remains the same - to create a predictive model which can improve the screening process for loan applicants in order to reduce the risk to investors.
-****how has it changed from the original plan?????******
+The inital exploration has been useful to understand the interesting trends in the data and to give an indication of what will be worth exploring in more detail. The the main goal of the project remains the same as when it was discussed in the Capstone proposal - to create a predictive model which can improve the screening process for loan applicants in order to reduce the risk to investors.
 
 The following is the approach for the project:
 
@@ -290,3 +285,6 @@ The following is the approach for the project:
   * Loan Success - determination of the most influential applicant attributes that will result in a sucessful loan. This will be done by diving deeper into the features described in section 3 (preliminary exploration) that have shown interesting trends. 
   
   * Predictive model - develop a predictive model that will better screen the applicants and ultimately improve the overall percentage of successful loans to bad loans. 
+  
+  
+  
