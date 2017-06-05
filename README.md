@@ -175,9 +175,15 @@ lc_cleaned <- read_csv("~/Springboard/Capstone project/New folder/lc_cleaned.csv
 lc = lc_cleaned
 
 library(ggplot2)
-p <- ggplot(lc, aes(x = fico_range_mean, group = is_bad, color = factor(is_bad)))
-p + geom_density()
-p  
+
+jpeg('rplotp.jpg')
+
+p <- ggplot(lc, aes(x = fico_range_mean, group = is_bad, color = factor(is_bad))) + geom_density()
+
+dev.off()
+#p <- ggplot(lc, aes(x = fico_range_mean, group = is_bad, color = factor(is_bad)))
+#p + geom_density()
+#p  
 ```
 As expected there is a difference between the 2 status' for this variable which suggests that a higher FICO score is more desirable with higher rates of defaulted loans witnessed in lower FICO ranges.
 
