@@ -5,7 +5,7 @@ date: "20 May 2017"
 output: html_document
 ---
 
-# Introduction
+# Introduction 
 
 ## What is Lending Club
 The client is Lending Club, an online credit marketplace that uses technology to offer more attractive loan terms than traditional banks, passing the savings on to borrowers in the form of lower interest rates and invetors in terms of solid returns.
@@ -190,7 +190,7 @@ As expected there is a difference between the 2 status' for this variable which 
 
 p1 <- ggplot(lc, aes(x = dti, group = is_bad, color = factor(is_bad)))
 p1 + geom_density()
-p1 
+p1  
 ```
 DTI is quite evenly spread however there is a slight tendency of higher DTI's to result in more bad loans hence confirming that the lower the DTI value the more likely the loan is to be successfully paid off. It is worth looking into further. 
 
