@@ -59,7 +59,7 @@ table(lc1$is_bad, sign(lc1$is_bad))
 ```
 This produces the following table. The use of the sign function can derive a smarter baseline however in this case, both tables (actual results and smart baseline) derive the same accuracy of 84.88%.
 
-             0        1
+                0        1
         
   0         36103        0
   
@@ -95,8 +95,9 @@ Deviance Residuals:
     Min       1Q   Median       3Q      Max  
 -2.7768  -0.0486  -0.0110  -0.0002   8.4904  
 
+
 Coefficients: (6 not defined because of singularities)
-                                     Estimate Std. Error z value Pr(>|z|)    
+                                      Estimate Std. Error z value Pr(>|z|)    
 (Intercept)                        -2.659e+00  6.569e+00  -0.405  0.68561    
 loan_amnt                           3.267e-04  3.580e-05   9.125  < 2e-16 ***
 term_mths60 months                  4.376e+00  3.329e-01  13.145  < 2e-16 ***
@@ -170,7 +171,7 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 (Dispersion parameter for binomial family taken to be 1)
 
-    Null deviance: 34457.8  on 41111  degrees of freedom
+  Null deviance: 34457.8  on 41111  degrees of freedom
 Residual deviance:  1195.3  on 41050  degrees of freedom
   (1427 observations deleted due to missingness)
 AIC: 1319.3
@@ -585,22 +586,6 @@ lc1$predicted.risk <- predict(model7, type = "response")
 
 ## Step 8 - Using the Model
 
-### Determine the expected rate of return on the investment
-
-ERR <- function(x) {
-            ((1-lc1$predicted.risk)*((lc1$int_rate_percent)/100) + (lc1$predicted.risk)*(-1))
-}
-
-lc1$ERR <- sapply(lc1, ERR)
-
-These loans can then be investigated further using the ERR metric and default rate in order to set the most suitable threshold for accepting loans - the lower the threshold, the easier it is to get a loan and hence, the more default loans that would be expected.
-****to be completed***
-
-### Important variables
-Using the log of the coefficients, can see which are the most important factors to consider when investigating the success of a loan. For investors, these factors can then be weighted to determine the highest rate of return on an investment portfolio.
-****to be completed***
-
-
 ### Beating Lending Club's model
 For an investor, the rate of return on an investment is derived from the interest rate. This is derived from a series of factors such as the FICO score, employment length, etc. 
 
@@ -614,6 +599,28 @@ The default rate or probability of default of each loan was calculated for each 
 
 ```{r}
 Train$predicted.risk <- predict(model7, type = "response")
+```
+
+### Determine the expected rate of return on the investment
+
+
+```{r}
+ERR <- function(x) {
+            ((1-lc1$predicted.risk)*((lc1$int_rate_percent)/100) + (lc1$predicted.risk)*(-1))
+}
+```
+
+lc1$ERR <- sapply(lc1, ERR)
+
+These loans can then be investigated further using the ERR metric and default rate in order to set the most suitable threshold for accepting loans - the lower the threshold, the easier it is to get a loan and hence, the more default loans that would be expected.
+****to be completed***
+
+### Important variables
+Using the log of the coefficients, can see which are the most important factors to consider when investigating the success of a loan. For investors, these factors can then be weighted to determine the highest rate of return on an investment portfolio.
+****to be completed***
+
+
+
 ```
 
 
