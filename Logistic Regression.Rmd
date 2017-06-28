@@ -59,9 +59,11 @@ table(lc1$is_bad, sign(lc1$is_bad))
 ```
 This produces the following table. The use of the sign function can derive a smarter baseline however in this case, both tables (actual results and smart baseline) derive the same accuracy of 84.88%.
 
-        0     1
-  0 36103     0
-  1     0  6432
+             0        1
+        
+  0         36103        0
+  
+  1             0     6432
   
 
 ## Step 2 - Split the data 
