@@ -1,0 +1,621 @@
+---
+title: "Untitled"
+author: "Paddy"
+date: "19 June 2017"
+output: 
+        html_document:
+          keep_md: true
+
+---
+
+
+```{r, echo = FALSE}
+#knitr::opts_chunk$set(
+ # fig.path = "README_figs_lreg/README-"
+#)
+```
+
+## Import the data set
+I will be using the "lc_formatted" dataset as described in the Data Wrangling section. This dataset does not include the One Hot Encoding exercise that was carried out on the data. This may have been useful if a significant amount of variables were being used for the machine learning however for the purpose of the logistic regression, I will be selecting the variables that will be used. Logistic regression will format the variables as required.
+
+Import the data set and rename to lc1 (for ease of use):
+
+```{r eval =FALSE}
+library(tidyr)
+library(dplyr)
+library(readr)
+
+lc_formatted <- read_csv("~/Springboard/Capstone project/New folder/lc_formatted.csv")
+
+lc1 = lc_formatted
+```
+
+## Further formatting
+
+### Variables not required
+
+For the date columns to be useful, they need to be binned into quarters or even months so that trends can be investigated in groups rather than on particular days. For this analysis, the date columns will not be investigated, however future work could investigate correlations between default rate and loans issued on certain dates for example. Hence, columns "issue date", "last_pymnt_d", "last_credit_pull_d" etc will be omitted from the regression in this instance. 
+
+Address will also not be required for the purpose of this analysis so this will also be removed from the data set. 
+
+```{r}
+lc1[, c("addr_state", "earliest_cr_line", "last_credit_pull_d", "last_pymnt_d", "X1")] <- NULL
+```
+## Logistic Regression
+
+The initial logistic regression to be carried out is to gain a better insight into the default rates of loans. The probability of default will be calculated for each loan which will allow for further analysis in terms of determining the true return on investment of a loan (when the default is taken into account as well as the interest rate - this will allow for a more robust portfolio for investors and hence a better overall return on investment). Additionally, further analysis will be carried out to determine the factors that were used by Lending Club to predict interest rates. 
+
+
+The dependent variable which will be used for the inital logistic regression analysis is "is_bad", the variable which tells us whether or not the loan has defaulted. "1" means the loan has defaulted while "0" means the loan has been successfully paid off. The independent variables will be added around this dependent variable and re-iterated until a successful model has been created.
+
+Once the model has been built, the "Test" dataset will be used for its evalution. 
+
+
+## Step 1 - Get the Baseline 
+Predict the most frequent outcome (i.e. default loan or complete loan) of all observations. This is done by counting the actual number of default loans vs the number of complete loans to give the accuracy of the dataset. 
+
+```{r}
+table(lc1$is_bad, sign(lc1$is_bad))
+```
+This produces the following table. The use of the sign function can derive a smarter baseline however in this case, both tables (actual results and smart baseline) derive the same accuracy of 84.88%.
+
+        0     1
+  0 36103     0
+  1     0  6432
+  
+
+## Step 2 - Split the data 
+Using CaTools package, split the data into 2 sections - test data and train data. The ratio for the divide will be 80/20 i.e. 80% of the dataset will be made up of train data "Train" and the remaining 20% will be test data "Test".
+
+```{r}
+library(caTools)
+set.seed(80)
+split = sample.split(lc1$is_bad, SplitRatio = 0.80)
+Train = subset(lc1, split = TRUE)
+#Train1 = 
+Test = subset(lc1, split = FALSE)
+```
+
+## Step 3 - Run logistic regression on the model
+
+Model1 will take into account all variables apart from member id and loan status. The idea is to start with the majority of the variables and gradually narrow down until only the significant variables are included in the model.
+```{r}
+ model1 <- glm(is_bad ~. -id -loan_status, data = Train, family = "binomial")
+summary(model1)
+```
+
+glm.fit: algorithm did not convergeglm.fit: fitted probabilities numerically 0 or 1 occurred
+Call:
+glm(formula = is_bad ~ . - id - loan_status, family = "binomial", 
+    data = Train)
+
+Deviance Residuals: 
+    Min       1Q   Median       3Q      Max  
+-2.7768  -0.0486  -0.0110  -0.0002   8.4904  
+
+Coefficients: (6 not defined because of singularities)
+                                     Estimate Std. Error z value Pr(>|z|)    
+(Intercept)                        -2.659e+00  6.569e+00  -0.405  0.68561    
+loan_amnt                           3.267e-04  3.580e-05   9.125  < 2e-16 ***
+term_mths60 months                  4.376e+00  3.329e-01  13.145  < 2e-16 ***
+int_rate_percent                   -2.622e-01  1.048e-01  -2.502  0.01234 *  
+installment                         1.074e-01  4.685e-03  22.929  < 2e-16 ***
+gradeB                              8.372e-01  4.709e-01   1.778  0.07542 .  
+gradeC                              5.889e-01  7.016e-01   0.839  0.40126    
+gradeD                              4.247e-01  8.962e-01   0.474  0.63554    
+gradeE                             -8.686e-01  1.108e+00  -0.784  0.43294    
+gradeF                             -2.977e+00  1.452e+00  -2.051  0.04031 *  
+gradeG                             -4.531e+00  1.603e+00  -2.827  0.00470 ** 
+emp_length_yrs1                     1.371e-01  4.307e-01   0.318  0.75021    
+emp_length_yrs10                    3.536e-01  3.441e-01   1.028  0.30416    
+emp_length_yrs2                     3.435e-01  3.738e-01   0.919  0.35811    
+emp_length_yrs3                     5.318e-01  3.779e-01   1.407  0.15930    
+emp_length_yrs4                     7.329e-03  4.367e-01   0.017  0.98661    
+emp_length_yrs5                    -3.292e-01  4.886e-01  -0.674  0.50045    
+emp_length_yrs6                    -1.659e-01  5.144e-01  -0.322  0.74712    
+emp_length_yrs7                     4.392e-01  5.145e-01   0.854  0.39333    
+emp_length_yrs8                     6.855e-01  5.052e-01   1.357  0.17484    
+emp_length_yrs9                    -7.002e-02  7.839e-01  -0.089  0.92883    
+emp_length_yrsn/a                   1.070e+00  4.238e-01   2.525  0.01157 *  
+home_ownershipOTHER                 2.516e-01  1.110e+00   0.227  0.82063    
+home_ownershipRENT                 -2.493e-01  1.988e-01  -1.254  0.20984    
+annual_inc                         -1.112e-05  3.786e-06  -2.936  0.00333 ** 
+verification_statusSource Verified -1.315e-02  2.308e-01  -0.057  0.95456    
+verification_statusVerified        -2.540e-01  2.575e-01  -0.987  0.32380    
+issue_d                             3.696e-06  3.473e-04   0.011  0.99151    
+pymnt_plany                        -7.430e+00  3.561e+05   0.000  0.99998    
+purposecredit_card                  3.756e-01  5.424e-01   0.693  0.48861    
+purposedebt_consolidation           2.942e-01  4.814e-01   0.611  0.54111    
+purposeeducational                  6.089e-01  8.438e-01   0.722  0.47052    
+purposehome_improvement             6.227e-01  5.568e-01   1.118  0.26336    
+purposehouse                        1.039e-01  1.232e+00   0.084  0.93279    
+purposemedical                      6.236e-01  6.399e-01   0.974  0.32982    
+purposemoving                       1.092e-01  7.779e-01   0.140  0.88834    
+purposeother                        5.570e-01  4.750e-01   1.173  0.24097    
+purposerenewable_energy             9.783e-01  1.128e+00   0.867  0.38572    
+purposesmall_business               1.101e+00  5.968e-01   1.845  0.06505 .  
+purposevacation                     7.641e-01  6.626e-01   1.153  0.24884    
+purposewedding                      8.235e-01  7.730e-01   1.065  0.28675    
+dti                                 2.699e-03  1.459e-02   0.185  0.85318    
+delinq_2yrs                         1.312e-01  1.448e-01   0.906  0.36506    
+fico_range_low                      9.069e-03  4.862e-03   1.865  0.06212 .  
+fico_range_high                            NA         NA      NA       NA    
+inq_last_6mths                     -7.224e-02  7.664e-02  -0.943  0.34585    
+open_acc                           -1.446e-02  2.966e-02  -0.487  0.62600    
+pub_rec                             2.338e-01  4.132e-01   0.566  0.57152    
+revol_bal                          -1.216e-05  7.666e-06  -1.586  0.11264    
+revol_util                          4.276e-03  3.918e-03   1.091  0.27511    
+total_acc                           2.449e-02  1.173e-02   2.088  0.03682 *  
+total_pymnt                         2.600e+01  3.595e+01   0.723  0.46957    
+total_pymnt_inv                    -1.109e-04  7.404e-05  -1.498  0.13401    
+total_rec_prncp                    -2.600e+01  3.595e+01  -0.723  0.46949    
+total_rec_int                      -2.600e+01  3.595e+01  -0.723  0.46960    
+total_rec_late_fee                 -2.599e+01  3.595e+01  -0.723  0.46976    
+recoveries                         -2.275e+01  7.547e+01  -0.301  0.76305    
+collection_recovery_fee            -4.460e+00  3.664e+02  -0.012  0.99029    
+last_pymnt_amnt                    -1.041e-04  1.057e-04  -0.985  0.32484    
+last_fico_range_high               -6.850e-03  1.399e-03  -4.898 9.69e-07 ***
+last_fico_range_low                -2.049e-04  9.937e-04  -0.206  0.83660    
+acc_now_delinq                             NA         NA      NA       NA    
+delinq_amnt                                NA         NA      NA       NA    
+pub_rec_bankruptcies                8.694e-02  5.189e-01   0.168  0.86692    
+tax_liens                                  NA         NA      NA       NA    
+meet_cred_pol                      -9.242e-01  4.395e-01  -2.103  0.03550 *  
+fico_range_mean                            NA         NA      NA       NA    
+fico_norm                                  NA         NA      NA       NA    
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+(Dispersion parameter for binomial family taken to be 1)
+
+    Null deviance: 34457.8  on 41111  degrees of freedom
+Residual deviance:  1195.3  on 41050  degrees of freedom
+  (1427 observations deleted due to missingness)
+AIC: 1319.3
+
+Number of Fisher Scoring iterations: 25
+
+
+
+Model1 gave several significant values. The next step is to take just the significant values and run the regression model again until all values in the model are significant. I've left fico_norm in as this is a significant variable.
+
+```{r}
+ model4 <- glm(is_bad ~ loan_amnt + term_mths + int_rate_percent + installment + grade + annual_inc + total_acc + last_fico_range_high + meet_cred_pol + fico_norm, data = Train, family = "binomial")
+summary(model4)
+
+```
+
+Call:
+glm(formula = is_bad ~ loan_amnt + term_mths + int_rate_percent + 
+    installment + grade + annual_inc + total_acc + last_fico_range_high + 
+    meet_cred_pol + fico_norm, family = "binomial", data = Train)
+
+Deviance Residuals: 
+    Min       1Q   Median       3Q      Max  
+-4.9899  -0.4520  -0.2685  -0.1403   3.5422  
+
+Coefficients:
+                       Estimate Std. Error z value Pr(>|z|)    
+(Intercept)           1.076e+01  2.053e-01  52.430  < 2e-16 ***
+loan_amnt             1.890e-05  8.488e-06   2.227  0.02596 *  
+term_mths60 months    5.766e-01  6.116e-02   9.429  < 2e-16 ***
+int_rate_percent      3.069e-02  1.578e-02   1.945  0.05181 .  
+installment           2.408e-04  2.917e-04   0.826  0.40900    
+gradeB                2.016e-01  8.057e-02   2.502  0.01236 *  
+gradeC                2.784e-01  1.119e-01   2.489  0.01283 *  
+gradeD                3.929e-01  1.415e-01   2.778  0.00547 ** 
+gradeE                3.349e-01  1.691e-01   1.980  0.04766 *  
+gradeF                5.556e-01  2.035e-01   2.731  0.00632 ** 
+gradeG                6.141e-01  2.381e-01   2.579  0.00989 ** 
+annual_inc           -4.041e-06  4.592e-07  -8.801  < 2e-16 ***
+total_acc             1.107e-02  1.528e-03   7.241 4.45e-13 ***
+last_fico_range_high -1.997e-02  2.494e-04 -80.047  < 2e-16 ***
+meet_cred_pol        -5.581e-01  6.109e-02  -9.135  < 2e-16 ***
+fico_norm             1.801e-01  3.270e-02   5.507 3.66e-08 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+(Dispersion parameter for binomial family taken to be 1)
+
+    Null deviance: 36119  on 42505  degrees of freedom
+Residual deviance: 24780  on 42490  degrees of freedom
+  (33 observations deleted due to missingness)
+AIC: 24812
+
+Number of Fisher Scoring iterations: 6
+
+```{r}
+model5 <- glm(is_bad ~ loan_amnt + term_mths + int_rate_percent + grade + annual_inc + total_acc + last_fico_range_high + meet_cred_pol + fico_norm, data = Train, family = "binomial")
+
+summary(model5)
+```
+
+
+Call:
+glm(formula = is_bad ~ loan_amnt + term_mths + int_rate_percent + 
+    grade + annual_inc + total_acc + last_fico_range_high + meet_cred_pol + 
+    fico_norm, family = "binomial", data = Train)
+
+Deviance Residuals: 
+    Min       1Q   Median       3Q      Max  
+-4.9912  -0.4518  -0.2684  -0.1402   3.5389  
+
+Coefficients:
+                       Estimate Std. Error z value Pr(>|z|)    
+(Intercept)           1.075e+01  2.048e-01  52.515  < 2e-16 ***
+loan_amnt             2.549e-05  2.881e-06   8.849  < 2e-16 ***
+term_mths60 months    5.425e-01  4.507e-02  12.037  < 2e-16 ***
+int_rate_percent      3.225e-02  1.567e-02   2.058  0.03959 *  
+gradeB                2.014e-01  8.058e-02   2.499  0.01246 *  
+gradeC                2.778e-01  1.119e-01   2.483  0.01302 *  
+gradeD                3.943e-01  1.414e-01   2.788  0.00531 ** 
+gradeE                3.355e-01  1.691e-01   1.984  0.04730 *  
+gradeF                5.575e-01  2.035e-01   2.740  0.00615 ** 
+gradeG                6.186e-01  2.380e-01   2.599  0.00935 ** 
+annual_inc           -4.023e-06  4.584e-07  -8.776  < 2e-16 ***
+total_acc             1.109e-02  1.528e-03   7.258 3.92e-13 ***
+last_fico_range_high -1.996e-02  2.494e-04 -80.055  < 2e-16 ***
+meet_cred_pol        -5.563e-01  6.105e-02  -9.112  < 2e-16 ***
+fico_norm             1.806e-01  3.270e-02   5.525 3.29e-08 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+(Dispersion parameter for binomial family taken to be 1)
+
+    Null deviance: 36119  on 42505  degrees of freedom
+Residual deviance: 24780  on 42491  degrees of freedom
+  (33 observations deleted due to missingness)
+AIC: 24810
+
+Number of Fisher Scoring iterations: 6
+
+```{r}
+model6 <- glm(is_bad ~ loan_amnt + term_mths + purpose + int_rate_percent + grade + annual_inc + total_acc + last_fico_range_high + meet_cred_pol + fico_norm, data = Train, family = "binomial")
+
+summary(model6)
+```
+
+
+Call:
+glm(formula = is_bad ~ loan_amnt + term_mths + purpose + int_rate_percent + 
+    grade + annual_inc + total_acc + last_fico_range_high + meet_cred_pol + 
+    fico_norm, family = "binomial", data = Train)
+
+Deviance Residuals: 
+    Min       1Q   Median       3Q      Max  
+-4.9601  -0.4489  -0.2659  -0.1377   3.5454  
+
+Coefficients:
+                            Estimate Std. Error z value Pr(>|z|)    
+(Intercept)                1.064e+01  2.251e-01  47.267  < 2e-16 ***
+loan_amnt                  2.527e-05  3.004e-06   8.410  < 2e-16 ***
+term_mths60 months         5.881e-01  4.547e-02  12.935  < 2e-16 ***
+purposecredit_card         4.374e-03  1.101e-01   0.040 0.968306    
+purposedebt_consolidation  1.215e-01  1.004e-01   1.210 0.226209    
+purposeeducational         4.667e-01  1.781e-01   2.620 0.008799 ** 
+purposehome_improvement    6.390e-02  1.157e-01   0.552 0.580663    
+purposehouse               1.171e-01  1.882e-01   0.622 0.533881    
+purposemedical             2.259e-01  1.511e-01   1.495 0.135003    
+purposemoving              1.422e-01  1.606e-01   0.885 0.376088    
+purposeother               9.342e-02  1.049e-01   0.890 0.373199    
+purposerenewable_energy    3.620e-01  3.258e-01   1.111 0.266493    
+purposesmall_business      7.930e-01  1.165e-01   6.806 1.00e-11 ***
+purposevacation            1.205e-01  1.936e-01   0.622 0.533779    
+purposewedding            -7.067e-03  1.544e-01  -0.046 0.963487    
+int_rate_percent           2.989e-02  1.572e-02   1.901 0.057289 .  
+gradeB                     1.595e-01  8.079e-02   1.974 0.048389 *  
+gradeC                     2.091e-01  1.122e-01   1.863 0.062424 .  
+gradeD                     2.982e-01  1.419e-01   2.101 0.035612 *  
+gradeE                     2.179e-01  1.697e-01   1.284 0.199085    
+gradeF                     4.161e-01  2.042e-01   2.038 0.041574 *  
+gradeG                     4.435e-01  2.389e-01   1.856 0.063404 .  
+annual_inc                -4.081e-06  4.649e-07  -8.777  < 2e-16 ***
+total_acc                  1.168e-02  1.540e-03   7.587 3.27e-14 ***
+last_fico_range_high      -1.991e-02  2.505e-04 -79.499  < 2e-16 ***
+meet_cred_pol             -5.556e-01  6.135e-02  -9.056  < 2e-16 ***
+fico_norm                  1.289e-01  3.341e-02   3.857 0.000115 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+(Dispersion parameter for binomial family taken to be 1)
+
+    Null deviance: 36119  on 42505  degrees of freedom
+Residual deviance: 24662  on 42479  degrees of freedom
+  (33 observations deleted due to missingness)
+AIC: 24716
+
+Number of Fisher Scoring iterations: 6
+
+After several iterations, model6 will be used for predicting on the Training data
+
+## Step 4 - Predicting on Training Data
+
+Run model6 on the Train data:
+
+```{r}
+predictTrain = predict(model6, type = "response")
+#table(Train$is_bad, predictTrain > 0.5)
+```
+For the tapply and table functions an error was returned:
+          "Error in tapply(predict, lc1$is_bad, mean) : 
+            arguments must have same length"
+            
+This is due to the exclusion of NA values in the model which renders less observations than when the predict function and hence the entire data set is used.
+
+This is combatted with the addition of "na.action = na.exclude" in the model.
+
+```{r}
+model7 <- glm(is_bad ~ loan_amnt + term_mths + purpose + int_rate_percent + grade + annual_inc + total_acc + last_fico_range_high + meet_cred_pol + fico_norm, data = Train, family = "binomial", na.action = na.exclude)
+summary(model7)
+
+```
+Call:
+glm(formula = is_bad ~ loan_amnt + term_mths + purpose + int_rate_percent + 
+    grade + annual_inc + total_acc + last_fico_range_high + meet_cred_pol + 
+    fico_norm, family = "binomial", data = Train, na.action = na.exclude)
+
+Deviance Residuals: 
+    Min       1Q   Median       3Q      Max  
+-4.9601  -0.4489  -0.2659  -0.1377   3.5454  
+
+Coefficients:
+                            Estimate Std. Error z value Pr(>|z|)    
+(Intercept)                1.064e+01  2.251e-01  47.267  < 2e-16 ***
+loan_amnt                  2.527e-05  3.004e-06   8.410  < 2e-16 ***
+term_mths60 months         5.881e-01  4.547e-02  12.935  < 2e-16 ***
+purposecredit_card         4.374e-03  1.101e-01   0.040 0.968306    
+purposedebt_consolidation  1.215e-01  1.004e-01   1.210 0.226209    
+purposeeducational         4.667e-01  1.781e-01   2.620 0.008799 ** 
+purposehome_improvement    6.390e-02  1.157e-01   0.552 0.580663    
+purposehouse               1.171e-01  1.882e-01   0.622 0.533881    
+purposemedical             2.259e-01  1.511e-01   1.495 0.135003    
+purposemoving              1.422e-01  1.606e-01   0.885 0.376088    
+purposeother               9.342e-02  1.049e-01   0.890 0.373199    
+purposerenewable_energy    3.620e-01  3.258e-01   1.111 0.266493    
+purposesmall_business      7.930e-01  1.165e-01   6.806 1.00e-11 ***
+purposevacation            1.205e-01  1.936e-01   0.622 0.533779    
+purposewedding            -7.067e-03  1.544e-01  -0.046 0.963487    
+int_rate_percent           2.989e-02  1.572e-02   1.901 0.057289 .  
+gradeB                     1.595e-01  8.079e-02   1.974 0.048389 *  
+gradeC                     2.091e-01  1.122e-01   1.863 0.062424 .  
+gradeD                     2.982e-01  1.419e-01   2.101 0.035612 *  
+gradeE                     2.179e-01  1.697e-01   1.284 0.199085    
+gradeF                     4.161e-01  2.042e-01   2.038 0.041574 *  
+gradeG                     4.435e-01  2.389e-01   1.856 0.063404 .  
+annual_inc                -4.081e-06  4.649e-07  -8.777  < 2e-16 ***
+total_acc                  1.168e-02  1.540e-03   7.587 3.27e-14 ***
+last_fico_range_high      -1.991e-02  2.505e-04 -79.499  < 2e-16 ***
+meet_cred_pol             -5.556e-01  6.135e-02  -9.056  < 2e-16 ***
+fico_norm                  1.289e-01  3.341e-02   3.857 0.000115 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+(Dispersion parameter for binomial family taken to be 1)
+
+    Null deviance: 36119  on 42505  degrees of freedom
+Residual deviance: 24662  on 42479  degrees of freedom
+  (33 observations deleted due to missingness)
+AIC: 24716
+
+Number of Fisher Scoring iterations: 6
+
+
+```{r}
+predict1 = predict(model7, type = "response")
+table(Train$is_bad, predict1 > 0.5)
+
+predictTest1 = predict(model7, type = "response", newdata = Test)
+table(Test$is_bad, predictTest1 > 0.5)
+```
+The table function above produces the confusion matrix by using the predict function on the model7. This table will be used to intially analyse the model. This matrix allows for calculations to be made regarding the accuracy of the model.
+
+                 FALSE  TRUE
+                0 34620  1457
+                1  3991  2438
+      
+          
+## Step 5 - Measuring the accuracy of the model
+From the table above, the accuracy of the model can be measured using the following metrics.
+
+### Overall accuracy 
+Overall accuracy = (TN + TP)/N
+
+```{r}
+(34620+2438)/nrow(Train)
+
+```
+This gives an accuracy of 0.8711535 or 87.12%.
+
+### Sensitivity 
+Sensitivity = TP/(TP+FN)
+
+```{r}
+2438/(2438+3991)
+```
+Sensitivity = 0.37922 or 37.92%
+
+### Specificity
+Specificity = TN/(TN+FP)
+
+```{r}
+34620/(34620+1457)
+
+```
+Specificity = 0.9596142 or 95.96%
+
+Comparing the accuracy of the model to the baseline model shows the model is 2.24% more accurate i.e. 
+Baseline accuracy = 84.88% 
+Model = 87.12%
+
+Hence, the calculations show that the model is more accurate than the baseline model which means that the model will derive less mistakes when predicting the outcome of the success of a loan.
+
+Want to go a step further with the analysis and investigate the threshold value (t) and the impact it can have on the accuracy and effectiveness of the model.
+
+## Step 6 Analysis
+
+### AUC
+In order to investigate the t value further, a good place to start is to determine the area under the curve (AUC) of the ROC curve for the model. The resulting AUC value is an indicator of the discrimination ability of the model. The value ranges from 0.5 to 1 with a higher value representing a better discrimination ability and hence a better predictor. 
+
+
+For example, an ROC curve with an AUC of 0.5 will have a curve close to 45 degrees and will have little or no discimination ability i.e. the prediction will be 50/50 - pure chance.
+Whereas a curve that tends towards the top left hand corner of the plot will have an AUC of closer to 1 which indicates perfect discrimination ability.
+Hence, a high AUC value is more desirable as it indicate a better predictor power for the model in question.
+
+```{r}
+#![AUC Explanation.](\C:\Users\Pat\Documents\Springboard\Capstone project\Capstone #Milestone\README_figs_lreg\AUC.png)
+```
+
+Using the Train data to get the AUC:
+
+```{r}
+library(ROCR)
+pred = prediction(predict1, Train$is_bad)
+as.numeric(performance(pred, "auc")@y.values)
+```
+This gives a value of 0.8917 or 89.17% - this is higher than our baseline (84.88%) but can still be improved.
+
+For a bank, the cost of the misclassifiction of default loans is much higher than the cost of the misclassification of successful loans i.e. it is more detrimental to Lending Club's business and to investors if default loans are predicted as successful rather than successful loans being predicted as default. 
+
+Hence, for this particular model, sensitivity is very important to ensure the number of False negative cases in the model is kept as low as possible. This can be improved by adjusting the t value:
+
+Investigating overall accuracy, sensivity, and specificity for different t values:
+
+```{r}
+predict1 = predict(model7, type = "response")
+table(Train$is_bad, predict1 > 0.3)
+table(Train$is_bad, predict1 > 0.4)
+table(Train$is_bad, predict1 > 0.5)
+table(Train$is_bad, predict1 > 0.75)
+```
+Computing these values and compiling the data into a table:
+
+```{r}
+tvalue <- matrix(c(0.598, 0.483, 0.3797, 0.132, 0.911, 0.941, 0.9596, 0.992, 0.863, 0.870, 0.871, 0.861), ncol = 4, byrow= FALSE)
+colnames(tvalue) <- c("t=0.3", "t=0.4", "t=0.5", "t=0.75")
+rownames(tvalue) <- c("sensitivity", "specificity", "accuracy")
+tvalue <- as.table(tvalue)
+tvalue
+```
+    FALSE  TRUE
+  0 32877  3200
+  1  2585  3844
+   
+    FALSE  TRUE
+  0 33928  2149
+  1  3327  3102
+   
+    FALSE  TRUE
+  0 34620  1457
+  1  3988  2441
+   
+    FALSE  TRUE
+  0 35772   305
+  1  5581   848
+   
+   
+             t=0.3  t=0.4  t=0.5 t=0.75
+sensitivity 0.5980 0.1320 0.9596 0.8700
+specificity 0.4830 0.9110 0.9920 0.8710
+accuracy    0.3797 0.9410 0.8630 0.8610
+
+
+The main priority in this case is keeping the number of FN cases as low as possible. FN means that the model predicted the loan was good while in reality, the loan was actaully bad. There will always be some percentage of loans where the loan is predicted good but is actually bad however, we can adjust the t value to ensure this value is kept as low as possible.
+
+Using t=0.3 gives a relatively low FN rate in comparison to other higher t-values however, the overall percentage accuracy is still relatively high (1% lower than t=0.5 and t=0.75) - hence, t=0.3 seems to be the most suitable value to use. This can be confirmed by visually inspecting the ROC curve.
+
+
+### ROC Curve
+In the calculations above, the t value of 0.5 was used. In this section, the ROC curve will be graphed which will allow for the t value to be investigated further. When choosing the t value, there is a trade off between sensitivity and specificity calculations. Hence, what is more detrimental to the success of Lending Club from the model - the cost of failing to detect positives or the cost of raising false alarms. 
+
+Graphing the curve:
+
+```{r}
+ROCRpred = prediction(predict1, Train$is_bad)
+ROCRperf = performance(ROCRpred, "tpr", "fpr")
+p1 <- plot(ROCRperf)
+
+png("ROC_curve.png")
+p2 <- plot(ROCRperf, colorize = TRUE, print.cutoffs.at=seq(0,1,by=0.1), text.adj = c(-0.2, 1.7))
+p2
+dev.off()
+```
+*****remember to include the graph*****
+
+
+After investigating different values for the threshold and visually inspecting the ROC curve, overall the most suitable t-value is 0.30 so this will be used to determine how well the model works using test data.
+
+
+
+## Step 7 - Testing the Model 
+
+Computing the out-of-sample metrics on the Test dataset:
+
+```{r}
+predictTest = predict(model7, type = "response", newdata = Test)
+table(Test$is_bad, predictTest > 0.3)
+```
+
+       
+    FALSE  TRUE
+  0 32875  3202
+  1  2581  3848
+  
+Overall accuracy = (TN + TP)/N
+    = (32875+3848)/nrow(Test)
+    = 0.8632784
+
+Sensitivity = TP/(TP+FN)
+    = 3848/(3848+2581)
+    = 0.5985379
+
+Specificity = TN/(TN+FP)
+    = 32875/(32875+3202)
+    = 0.91124
+
+At a cutoff of 0.3, the sensitivity is massively improved from 0.38 in the original model to 0.59 in the revised model. This does not come with a massive trade off in overall model accuracy. The overall accuracy of the revised model on the Test set is 0.863 which is only slightly off the accuracy of the original model of 0.8711. Despite this slight descrease, the revised model is still more accurate than the baseline which was 0.8488. 
+
+Finish this section of linear regression by adding the default rates to each observation in the lc1 data set:
+
+```{r}
+lc1$predicted.risk <- predict(model7, type = "response")
+```
+
+
+## Step 8 - Using the Model
+
+### Determine the expected rate of return on the investment
+
+ERR <- function(x) {
+            ((1-lc1$predicted.risk)*((lc1$int_rate_percent)/100) + (lc1$predicted.risk)*(-1))
+}
+
+lc1$ERR <- sapply(lc1, ERR)
+
+These loans can then be investigated further using the ERR metric and default rate in order to set the most suitable threshold for accepting loans - the lower the threshold, the easier it is to get a loan and hence, the more default loans that would be expected.
+****to be completed***
+
+### Important variables
+Using the log of the coefficients, can see which are the most important factors to consider when investigating the success of a loan. For investors, these factors can then be weighted to determine the highest rate of return on an investment portfolio.
+****to be completed***
+
+
+### Beating Lending Club's model
+For an investor, the rate of return on an investment is derived from the interest rate. This is derived from a series of factors such as the FICO score, employment length, etc. 
+
+
+Hence, the interest rate is essentially an indication of the risk associated with a loan.
+***gradient boosting to be carried out using interest_rate as the dependent variable to determine the contribution of each variable in calculating the interest rate - this gbm model can potentially be compared to glm model for int rate to prove the gbm model is more accurate***
+
+Overall, the interest rate is not an accurate indicator of the return on investment as it only takes into account the return if the loan is successful. Hence, to determine the expected return on the loan or "Expected rate of return", the risk on each loan must also be included. 
+
+The default rate or probability of default of each loan was calculated for each loan in the training set and is derived  from the model7:
+
+```{r}
+Train$predicted.risk <- predict(model7, type = "response")
+```
+
+
+
+
+
+
