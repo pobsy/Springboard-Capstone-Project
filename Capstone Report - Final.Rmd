@@ -284,14 +284,14 @@ I will be using the "lc_formatted" dataset as described in the Data Wrangling se
 
 Import the data set and rename to lc1 (for ease of use):
 
-```{r eval =FALSE}
+```{r eval =TRUE, warning = FALSE}
 library(tidyr)
 library(dplyr)
 library(readr)
 
 lc_formatted <- read_csv("~/Springboard/Capstone project/New folder/lc_formatted.csv")
 
-lc1 = lc_formatted
+lc2 = lc_formatted
 ```
 
 ## Further formatting
@@ -302,8 +302,8 @@ For the date columns to be useful, they need to be binned into quarters or even 
 
 Address will also not be required for the purpose of this analysis so this will also be removed from the data set. 
 
-```{r eval =FALSE}
-lc1[, c("addr_state", "earliest_cr_line", "last_credit_pull_d", "last_pymnt_d", "X1")] <- NULL
+```{r eval = TRUE}
+lc2[, c("addr_state", "earliest_cr_line", "last_credit_pull_d", "last_pymnt_d", "X1")] <- NULL
 ```
 ## Logistic Regression
 
@@ -318,97 +318,89 @@ Once the model has been built, the "Test" dataset will be used for its evalution
 ## Step 1 - Get the Baseline 
 Predict the most frequent outcome (i.e. default loan or complete loan) of all observations. This is done by counting the actual number of default loans vs the number of complete loans to give the accuracy of the dataset. 
 
-```{r}
-table(lc1$is_bad, sign(lc1$is_bad))
+```{r eval = TRUE, echo = FALSE, results = 'asis'}
+cm_baseline = table(lc2$is_bad, sign(lc2$is_bad))
+knitr :: kable(cm_baseline)
 ```
 This produces the following table. The use of the sign function can derive a smarter baseline however in this case, both tables (actual results and smart baseline) derive the same accuracy of 84.88%.
 
-                0        1
-        
-  0         36103        0
-  
-  1             0     6432
+Looking at the table and results however, the baseline of 84.88% is quite high due to the fact that the majority of cases are 0. To make the prediction more insightful, the data will be split to a smaller data set which will comprise 50% 0 values and 50% 1 values. This will give the prediction alot more value.
   
 
 ## Step 2 - Split the data 
 Using CaTools package, split the data into 2 sections - test data and train data. The ratio for the divide will be 80/20 i.e. 80% of the dataset will be made up of train data "Train" and the remaining 20% will be test data "Test".
 
-```{r eval =FALSE}
+```{r eval = TRUE}
 library(caTools)
+library(ROSE)
 set.seed(80)
-split = sample.split(lc1$is_bad, SplitRatio = 0.80)
-Train = subset(lc1, split = TRUE)
-Train_under <- ovun.sample(is_bad~., data = lc1, method="under", N = 12000, seed = 40)$data
-Test = subset(lc1, split = FALSE)
+split = sample.split(lc2$is_bad, SplitRatio = 0.80)
+Train = subset(lc2, split = TRUE)
+Train_under <- ovun.sample(is_bad~., data = lc2, method="under", N = 12000, seed = 40)$data
+Test = subset(lc2, split = FALSE)
 ```
+
+Train data is the data set based on the original lc2 data. Alongside this data set, Train_under will also be used as this will give a clearer indication of the accuracy of the model that is built for reasons discussed in step 1.
 
 ## Step 3 - Run logistic regression on the model
 
 Model1 will take into account all variables apart from member id and loan status. The idea is to start with the majority of the variables and gradually narrow down until only the significant variables are included in the model.
 ```{r }
  model1 <- glm(is_bad ~. -id -loan_status, data = Train, family = "binomial")
-summary(model1)
+summary1 = summary(model1)
 ```
 
 Model1 gave several significant values. The next step is to take just the significant values and run the regression model again until all values in the model are significant. I've left fico_norm in as this is a significant variable.
 
 ```{r}
- model4 <- glm(is_bad ~ loan_amnt + term_mths + int_rate_percent + installment + grade + annual_inc + total_acc + last_fico_range_high + meet_cred_pol + fico_norm, data = Train, family = "binomial")
-summary(model4)
+ model2 <- glm(is_bad ~ loan_amnt + term_mths + int_rate_percent + installment + grade + annual_inc + total_acc + last_fico_range_high + meet_cred_pol + fico_norm, data = Train, family = "binomial")
+summary2 = summary(model2)
 
 ```
 
 
 ```{r}
-model5 <- glm(is_bad ~ loan_amnt + term_mths + int_rate_percent + grade + annual_inc + total_acc + last_fico_range_high + meet_cred_pol + fico_norm, data = Train, family = "binomial")
+model3 <- glm(is_bad ~ loan_amnt + term_mths + int_rate_percent + grade + annual_inc + total_acc + last_fico_range_high + meet_cred_pol + fico_norm, data = Train, family = "binomial")
 
-summary(model5)
+summary3 = summary(model3)
 ```
 
 
 ```{r}
-model6 <- glm(is_bad ~ loan_amnt + term_mths + purpose + int_rate_percent + grade + annual_inc + total_acc + last_fico_range_high + meet_cred_pol + fico_norm, data = Train, family = "binomial")
+model4 <- glm(is_bad ~ loan_amnt + term_mths + purpose + int_rate_percent + grade + annual_inc + total_acc + last_fico_range_high + meet_cred_pol + fico_norm, data = Train, family = "binomial")
 
-summary(model6)
+summary4 = summary(model4)
 ```
+Running this model on the Train1 data to see how it compares:
 
-After several iterations, model6 will be used for predicting on the Training data
+```{r}
+model5 <- glm(is_bad ~ loan_amnt + term_mths + purpose + int_rate_percent + grade + annual_inc + total_acc + last_fico_range_high + meet_cred_pol + fico_norm, data = Train_under, family = "binomial")
+
+summary5 = summary(model5)
+```
+After several iterations, model4 is a good fit and delivers an accurate model and hence will be used for predicting. Comparing this to model 5 (where the undersampled data is used), the accuracy has improved based on the AIC score reduction from 24716 in the Train data to 9927.4 in the Train_under data. Similarly, the goodness of fit of the model has improved as both the NULL deviance and residual deviance have reduced with the use of the Train_under data. 
 
 ## Step 4 - Predicting on Training Data
 
-Run model6 on the Train data:
+As model5 was strong, this will be chosen for the preiction stage on the Train data. The na's will be removed to ensure all columns are of equal length. The resulting model6 will be used to obtain a confusion matrix for analysis.
 
 ```{r}
-predictTrain = predict(model6, type = "response")
-#table(Train$is_bad, predictTrain > 0.5)
-```
-For the tapply and table functions an error was returned:
-          "Error in tapply(predict, lc1$is_bad, mean) : 
-            arguments must have same length"
-            
-This is due to the exclusion of NA values in the model which renders less observations than when the predict function and hence the entire data set is used.
-
-This is combatted with the addition of "na.action = na.exclude" in the model.
-
-```{r}
-model7 <- glm(is_bad ~ loan_amnt + term_mths + purpose + int_rate_percent + grade + annual_inc + total_acc + last_fico_range_high + meet_cred_pol + fico_norm, data = Train, family = "binomial", na.action = na.exclude)
-summary(model7)
+model6 <- glm(is_bad ~ loan_amnt + term_mths + purpose + int_rate_percent + grade + annual_inc + total_acc + last_fico_range_high + meet_cred_pol + fico_norm, data = Train_under, family = "binomial", na.action = na.exclude)
+summary(model6)
 
 ```
+Use the predict function on the Train data with a threshold value of 0.5 to begin with. This will be adjusted for optimal position.
+```{r eval = TRUE, echo = FALSE, results = 'asis'}
 
-```{r}
-predict1 = predict(model7, type = "response")
+predict1 = predict(model6, type = "response")
 cmTrain <- table(Train$is_bad, predict1 > 0.5)
+knitr :: kable(cm_baseline)
 
-predictTest1 = predict(model7, type = "response", newdata = Test)
-cmTest <- table(Test$is_bad, predictTest1 > 0.5)
+#possibly leave this out - only include test data when evaluating
+#predictTest1 = predict(model7, type = "response", newdata = Test)
+#cmTest <- table(Test$is_bad, predictTest1 > 0.5)
 ```
-The table function above produces the confusion matrix by using the predict function on the model7. This table will be used to intially analyse the model. This matrix allows for calculations to be made regarding the accuracy of the model.
-
-                 FALSE  TRUE
-                0 34620  1457
-                1  3991  2438
-      
+This matrix allows for calculations to be made regarding the accuracy of the model.
           
 ## Step 5 - Measuring the accuracy of the model
 From the table above, the accuracy of the model can be measured using the following metrics.
@@ -437,7 +429,7 @@ Specificity = TN/(TN+FP)
 34620/(34620+1457)
 
 ```
-Specificity = 0.9596142 or 95.96%
+****Need to update the results****Specificity = 0.9596142 or 95.96%
 
 Comparing the accuracy of the model to the baseline model shows the model is 2.24% more accurate i.e. 
 Baseline accuracy = 84.88% 
