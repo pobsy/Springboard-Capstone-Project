@@ -159,7 +159,7 @@ lc_comp <- union(lcr, lc_comparison)
 To complete the combined data set wrangling, the FICO score was normalised as before with the approved data set. There was no need to specify the centre and scale as this encompasses all observations for both accepted and rejected loans. 
 
 
-## Data Exploration
+# Data Exploration
 The purpose of the inital exploration was to gauge the relationship between the loan status and the remaining variables in the approved data set to determine if there are any factors that have more of an influence on the status of a loan than others. The objective of this was to take a selection of the more influencive variables in the data set to crudely determine the variables that could have the biggest impact on the success on the loan. 
 
 Once determined, the focus of the further data visualisation and exploration will be to deep dive into these variables and determine how they interact with one another. 
@@ -176,83 +176,77 @@ This will be done by plotting the density of 2 factors in is_bad (0/good/red and
       
 ### Fico_mean
   
-
-```r
-#install.packages("readr")
-#library(readr)
-lc_cleaned <- read.csv("~/Springboard/Capstone project/New folder/lc_cleaned.csv")
-
-lc = lc_cleaned
-
-
-library(ggplot2)
-
-p <- ggplot(lc, aes(x = fico_range_mean, group = is_bad, color = factor(is_bad))) + geom_density()
-p
-```
-
-![](README_figs/README-unnamed-chunk-10-1.png)<!-- -->
+![](README_figs_final/README-unnamed-chunk-10-1.png)<!-- -->
 
 As expected there is a difference between the 2 status' for this variable which suggests that a higher FICO score is more desirable with higher rates of defaulted loans witnessed in lower FICO ranges.
 
 ### DTI
-![](README_figs/README-unnamed-chunk-11-1.png)<!-- -->
+![](README_figs_final/README-unnamed-chunk-11-1.png)<!-- -->
+
 DTI is quite evenly spread however there is a slight tendency of higher DTI's to result in more bad loans hence confirming that the lower the DTI value the more likely the loan is to be successfully paid off. It is worth looking into further. 
 
 ### Loan Amount
-![](README_figs/README-unnamed-chunk-12-1.png)<!-- -->
+![](README_figs_final/README-unnamed-chunk-12-1.png)<!-- -->
+
 Apart from loans of smaller amounts having more of a success of being fully paid off, the spread is quite even along the graph and does not suggest much of a relationship between the chance of failure and success.
 
 ### Employment length
-![](README_figs/README-unnamed-chunk-13-1.png)<!-- -->
+![](README_figs_final/README-unnamed-chunk-13-1.png)<!-- -->
+
 Similar to Loan Amount, apart from 10 plus years of employment, there is no stark difference between the 2 observations. 
 
 ### Term
-![](README_figs/README-unnamed-chunk-14-1.png)<!-- -->
+![](README_figs_final/README-unnamed-chunk-14-1.png)<!-- -->
+
 Interestingly, the shorter the term, the more likely the loan is to succeed. This is definitely worth looking into further. 
 
 ### Interest Rate
-![](README_figs/README-unnamed-chunk-15-1.png)<!-- -->
+![](README_figs_final/README-unnamed-chunk-15-1.png)<!-- -->
+
 Similar to DTI, it would be expected that the lower the interest rate on the loan, the greater the chance of success as the interest rate is assigned based on the risk of the loan which is derived from the applicant's credit history. 
 
 ### Grade
-![](README_figs/README-unnamed-chunk-16-1.png)<!-- -->
+![](README_figs_final/README-unnamed-chunk-16-1.png)<!-- -->
+
 Grade appears to be similar to the interest rate in the fact that the grades which are deemed to be less risky are less likely to default i.e. A-grades are less likely to default while G-grades are more likely to default. It may be worth looking at the relationship between grade and interest rate later in the data exploration to determine the correlation between the two. 
 
 ### Home Ownership
-![](README_figs/README-unnamed-chunk-17-1.png)<!-- -->
+![](README_figs_final/README-unnamed-chunk-17-1.png)<!-- -->
+
 The two main observations in "home_ownership" are "rent" and "mortgage". The expectation would be that home owners would be more likely to repay their loans (which is the case) while renters would be more likely to default (which is not the case). There is not as much of a difference between the 2 of these observations as expected.  
 
 ### Annual Income
-![](README_figs/README-unnamed-chunk-18-1.png)<!-- -->
+![](README_figs_final/README-unnamed-chunk-18-1.png)<!-- -->
+
 There appears to be a consistent correlation between incomes for good and bad loans hence, this will not be investigated further.  
 
 ### Inquiries in the last 6 months
-![](README_figs/README-unnamed-chunk-19-1.png)<!-- -->
+![](README_figs_final/README-unnamed-chunk-19-1.png)<!-- -->
+
 This graph shows that if the applicant has 0 inquiries they have a better chance of a good loan. There is a relatively consistent trend after this where there is not a major difference between the number of inquiries and the success of the loan.
 
 ### Revolution util
-![](README_figs/README-unnamed-chunk-20-1.png)<!-- -->
+![](README_figs_final/README-unnamed-chunk-20-1.png)<!-- -->
+
 There is a very clear difference here between good and bad loans. The graph suggests that the lower the Revol Util, the better chance of successfully repaying the loan. 
 
 ### Purpose
-![](README_figs/README-unnamed-chunk-21-1.png)<!-- -->
-There are 4 main peaks in the graph with significant differences between the good and bad loan status. This will be looked at in more detail to determine what purpose of the loan results in a greater risk. 
+![](README_figs_final/README-unnamed-chunk-21-1.png)<!-- -->
+
+There are 4 main peaks in the graph with significant differences between the good and bad loan status. This will be looked at in more detail to determine what particular loan purposes result in a greater risk. 
 
 
+Overall, the inital data exploration and visulatisation demonstrates that there are significant variables that contribute to a loan being good or bad. FICO, employment length, interest rate, loan term, grade and purpose all show a strong relationship with the loan status as they demostrate a significant difference between the good and bad indicators of the loan status. These variables need to be investigated further.   
 _________________________________
 
 
-## Import the data set
-I will be using the "lc_formatted" dataset as described in the Data Wrangling section. This dataset does not include the One Hot Encoding exercise that was carried out on the data. This may have been useful if a significant amount of variables were being used for the machine learning however for the purpose of the logistic regression, I will be selecting the variables that will be used. Logistic regression will format the variables as required.
+# Data Analysis
+For the purpose of this section, machine learning will be used to build a model which can then be used to demostrate the contributions of the variables described in the Data Exploration section even further.
 
-Import the data set and rename to lc1 (for ease of use):
+I will be using the "lc_formatted" dataset as described in the Data Wrangling section. This dataset does not include the One Hot Encoding exercise that was carried out on the data. This may have been useful if a significant amount of variables were being used for the machine learning however for the purpose of the logistic regression, I will be selecting the variables that will be used. Logistic regression will format the variables as required. For example, "Purpose" will be automatically separated to show the signifiance of each individual loan purpose such as education, small business etc. 
 
 
-```r
-library(tidyr)
-library(dplyr)
-```
+
 
 ```
 ## 
@@ -269,12 +263,6 @@ library(dplyr)
 ## The following objects are masked from 'package:base':
 ## 
 ##     intersect, setdiff, setequal, union
-```
-
-```r
-library(readr)
-
-lc_formatted <- read_csv("~/Springboard/Capstone project/New folder/lc_formatted.csv")
 ```
 
 ```
@@ -309,25 +297,16 @@ lc_formatted <- read_csv("~/Springboard/Capstone project/New folder/lc_formatted
 ## See spec(...) for full column specifications.
 ```
 
-```r
-lc2 = lc_formatted
-```
-
-## Further formatting
-
-### Variables not required
+## Further formatting - Variables not required
 
 For the date columns to be useful, they need to be binned into quarters or even months so that trends can be investigated in groups rather than on particular days. For this analysis, the date columns will not be investigated, however future work could investigate correlations between default rate and loans issued on certain dates for example. Hence, columns "issue date", "last_pymnt_d", "last_credit_pull_d" etc will be omitted from the regression in this instance. 
 
 Address will also not be required for the purpose of this analysis so this will also be removed from the data set. 
 
 
-```r
-lc2[, c("addr_state", "earliest_cr_line", "last_credit_pull_d", "last_pymnt_d", "X1")] <- NULL
-```
 ## Logistic Regression
 
-The initial logistic regression to be carried out is to gain a better insight into the default rates of loans. The probability of default will be calculated for each loan which will allow for further analysis in terms of determining the true return on investment of a loan (when the default is taken into account as well as the interest rate - this will allow for a more robust portfolio for investors and hence a better overall return on investment). Additionally, further analysis will be carried out to determine the factors that were used by Lending Club to predict interest rates. 
+The initial logistic regression to be carried out is to gain a better insight into the default rates of loans. The probability of default will be calculated for each loan which will allow for further analysis in terms of determining the true return on investment of a loan (when the default is taken into account as well as the interest rate). This will allow for a more robust portfolio for investors and hence a better overall return on investment.  
 
 
 The dependent variable which will be used for the inital logistic regression analysis is "is_bad", the variable which tells us whether or not the loan has defaulted. "1" means the loan has defaulted while "0" means the loan has been successfully paid off. The independent variables will be added around this dependent variable and re-iterated until a successful model has been created.
@@ -335,7 +314,7 @@ The dependent variable which will be used for the inital logistic regression ana
 Once the model has been built, the "Test" dataset will be used for its evalution. 
 
 
-## Step 1 - Get the Baseline 
+### Step 1 - Get the Baseline 
 Predict the most frequent outcome (i.e. default loan or complete loan) of all observations. This is done by counting the actual number of default loans vs the number of complete loans to give the accuracy of the dataset. 
 
 
@@ -352,56 +331,16 @@ Looking at the table and results however, the baseline of 84.88% is quite high d
 Using CaTools package, split the data into 2 sections - test data and train data. The ratio for the divide will be 80/20 i.e. 80% of the dataset will be made up of train data "Train" and the remaining 20% will be test data "Test".
 
 
-```r
-library(caTools)
-```
 
-```
-## Warning: package 'caTools' was built under R version 3.3.3
-```
 
-```r
-library(ROSE)
-```
 
-```
-## Warning: package 'ROSE' was built under R version 3.3.3
-```
-
-```
-## Loaded ROSE 0.0-3
-```
-
-```r
-set.seed(80)
-split = sample.split(lc2$is_bad, SplitRatio = 0.80)
-Train = subset(lc2, split == TRUE)
-Train_under <- ovun.sample(is_bad~., data = lc2, method="under", N = 12000, seed = 40)$data
-Test = subset(lc2, split == FALSE)
-```
-
-Train data is the data set based on the original lc2 data. Alongside this data set, Train_under will also be used as this will give a clearer indication of the accuracy of the model that is built for reasons discussed in step 1. Train_under will be used to refine the model derived from the Train data set. 
+Train data is the data set based on the original lc2 data. Alongside this data set, Train_under will also be used as this will give a clearer indication of the accuracy of the model that is built for reasons discussed in step 1. Train_under will be used to refine the model which will be derived from the Train data set.
 
 ## Step 3 - Run logistic regression on the model
 
 Model1 will take into account all variables apart from member id and loan status. The idea is to start with the majority of the variables and gradually narrow down until only the significant variables are included in the model.
 
-```r
- model1 <- glm(is_bad ~. -id -loan_status, data = Train, family = "binomial")
-```
-
-```
-## Warning: glm.fit: algorithm did not converge
-```
-
-```
-## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-```
-
-```r
-summary1 = summary(model1)
-summary1
-```
+### Model 1
 
 ```
 ## 
@@ -567,12 +506,7 @@ summary1
 
 Model1 gave several significant values however it did not converge hence the next step is to take just the significant values and run the regression model again until all values in the model are significant.
 
-
-```r
- model2 <- glm(is_bad ~ loan_amnt + term_mths + int_rate_percent + installment + grade + annual_inc + total_acc + last_fico_range_high + meet_cred_pol + fico_norm, data = Train, family = "binomial")
-summary2 = summary(model2)
-summary2
-```
+### Model 2
 
 ```
 ## 
@@ -616,14 +550,7 @@ summary2
 ## Number of Fisher Scoring iterations: 6
 ```
 
-
-
-```r
-model3 <- glm(is_bad ~ loan_amnt + term_mths + int_rate_percent + grade + annual_inc + total_acc + last_fico_range_high + meet_cred_pol + fico_norm, data = Train, family = "binomial")
-
-summary3 = summary(model3)
-summary3
-```
+### Model 3
 
 ```
 ## 
@@ -666,14 +593,7 @@ summary3
 ## Number of Fisher Scoring iterations: 6
 ```
 
-
-
-```r
-model4 <- glm(is_bad ~ loan_amnt + term_mths + purpose + int_rate_percent + grade + annual_inc + total_acc + last_fico_range_high + meet_cred_pol + fico_norm, data = Train, family = "binomial")
-
-summary4 = summary(model4)
-summary4
-```
+### Model 4
 
 ```
 ## 
@@ -728,15 +648,8 @@ summary4
 ## Number of Fisher Scoring iterations: 6
 ```
 
+### Model 5
 Running this model on the Train_under data to see how it compares:
-
-
-```r
-model5 <- glm(is_bad ~ loan_amnt + term_mths + purpose + int_rate_percent + grade + annual_inc + total_acc + last_fico_range_high + meet_cred_pol + fico_norm, data = Train_under, family = "binomial")
-
-summary5 = summary(model5)
-summary5
-```
 
 ```
 ## 
@@ -789,15 +702,9 @@ summary5
 ## 
 ## Number of Fisher Scoring iterations: 5
 ```
-After several iterations, model4 is a good fit and delivers an accurate model as the AIC, residual deviance and NULL deviance have all reduced. However, can build a stronger model using an altered data set ("Train_under") which has been undersampled. Comparing this to model 5 (where the undersampled data is used), the accuracy has improved based on the AIC score reduction from 24716 in the Train data to 9927.4 in the Train_under data. Similarly, the goodness of fit of the model has improved as both the NULL deviance and residual deviance have reduced with the use of the Train_under data. 
+After several iterations, model4 is a good fit and delivers an accurate model as the AIC, residual deviance and NULL deviance have all reduced. However, a stronger model can be achieved using an altered data set ("Train_under") which has been undersampled. Comparing model 4 to model 5 (where the undersampled data is used), the accuracy has improved based on the AIC score reduction from 24716 in the Train data to 9927.4. Similarly, the goodness of fit of the model has improved as both the NULL deviance and residual deviance have reduced with the use of the Train_under data. 
 
 Getting the exp of the coefficients to make the data more readable:
-
-```r
-model5_tab <- coef(summary(model5))
-model5_tab[, "Estimate"] <- exp(coef(model5))
-model5_tab
-```
 
 ```
 ##                               Estimate   Std. Error      z value
@@ -858,7 +765,7 @@ model5_tab
 ## fico_norm                 7.477493e-03
 ```
 
-The higher the value, the greater the impact on the model and the overall probability of a loan defaulting. Looking at the table above, it is evidence that most significant variables in terms of the reason for the loan are "purpose_education", "purpose_small_business" and "purpose_renewable_energy". "Term_60mths" is also very significant which shows that the longer term, the greater the probabilty that the loan will not be repaid. Hence, there is a higher probability of default occuring when these variables are observed on a loan application. 
+The higher the value, the greater the impact on the model and the overall probability of a loan defaulting. Looking at the table above, it is evidence that most significant variables in terms of the reason for the loan are "purpose_education", "purpose_small_business" and "purpose_renewable_energy". "Term_60mths" is also very significant which shows that the longer term, the greater the probabilty that the loan will not be repaid. Hence, there is a higher probability of default occuring when these observations of the variables are observed on a loan application. 
 
 
 ## Step 4 - Predicting on Training Data
@@ -866,19 +773,17 @@ The higher the value, the greater the impact on the model and the overall probab
 As model5 was strong, this will be chosen for the preiction stage on the Train data. The na's will be removed to ensure all columns are of equal length. The resulting model6 will be used to obtain a confusion matrix for analysis.
 
 
-```r
-model6 <- glm(is_bad ~ loan_amnt + term_mths + purpose + int_rate_percent + grade + annual_inc + total_acc + last_fico_range_high + meet_cred_pol + fico_norm, data = Train_under, family = "binomial", na.action = na.exclude)
-summary6 <- summary(model6)
-```
 Use the predict function on the Test data with a threshold value of 0.5 to begin with. This will be adjusted for optimal position.
-   
-    FALSE  TRUE
-  0 23500  5360
-  1   913  4231
-   
-    FALSE TRUE
-  0  5932 1285
-  1   222 1063
+
+      FALSE   TRUE
+---  ------  -----
+0     23500   5360
+1       913   4231
+
+      FALSE   TRUE
+---  ------  -----
+0      5932   1285
+1       222   1063
 
 This matrix allows for calculations to be made regarding the accuracy of the model.
           
@@ -937,7 +842,7 @@ Comparing the Test and Train data shows good consistency with both data sets and
 
 Want to go a step further with the analysis and investigate the threshold value (t) and the impact it can have on the accuracy and effectiveness of the model.
 
-## Step 6 Analysis
+## Step 6 - Threshold Value
 
 ### AUC
 In order to investigate the t value further, a good place to start is to determine the area under the curve (AUC) of the ROC curve for the model. The resulting AUC value is an indicator of the discrimination ability of the model. The value ranges from 0.5 to 1 with a higher value representing a better discrimination ability and hence a better predictor. 
@@ -948,35 +853,9 @@ Whereas a curve that tends towards the top left hand corner of the plot will hav
 Hence, a high AUC value is more desirable as it indicate a better predictor power for the model in question.
 
 
-```r
-#![AUC Explanation.](\C:\Users\Pat\Documents\Springboard\Capstone project\Capstone #Milestone\README_figs_lreg\AUC.png)
-```
 
 Using the Train data to get the AUC:
 
-
-```
-## Warning: package 'ROCR' was built under R version 3.3.3
-```
-
-```
-## Loading required package: gplots
-```
-
-```
-## Warning: package 'gplots' was built under R version 3.3.3
-```
-
-```
-## 
-## Attaching package: 'gplots'
-```
-
-```
-## The following object is masked from 'package:stats':
-## 
-##     lowess
-```
 
 ```
 ## [1] 0.8914029
@@ -990,43 +869,44 @@ Hence, for this particular model, sensitivity is very important to ensure the nu
 Investigating overall accuracy, sensivity, and specificity for different t values:
 
 
-```
-##    
-##     FALSE  TRUE
-##   0 26365  2495
-##   1  2181  2963
-```
 
-```
-##    
-##     FALSE  TRUE
-##   0 23500  5360
-##   1   913  4231
-```
+#### t>0.3
 
-```
-##    
-##     FALSE  TRUE
-##   0 21780  7080
-##   1   558  4586
-```
+      FALSE   TRUE
+---  ------  -----
+0     19406   9454
+1       305   4839
 
-```
-##    
-##     FALSE  TRUE
-##   0 19406  9454
-##   1   305  4839
-```
+#### t>0.4
+
+      FALSE   TRUE
+---  ------  -----
+0     21780   7080
+1       558   4586
+
+#### t>0.5
+
+      FALSE   TRUE
+---  ------  -----
+0     23500   5360
+1       913   4231
+
+#### t>0.75
+
+      FALSE   TRUE
+---  ------  -----
+0     26365   2495
+1      2181   2963
+
 Computing these values and compiling the data into a table so that accuracy, sensitivity and specificity can be compared:
 
 
-```
-##        Accuracy Sensitivity Specificity
-## t=0.3      71.0        94.0        67.0
-## t=0.4      85.0        89.0        75.0
-## t=0.5      81.0        82.0        81.0
-## t=0.75     86.0        57.6        91.0
-```
+          Accuracy   Sensitivity   Specificity
+-------  ---------  ------------  ------------
+t=0.3           71          94.0            67
+t=0.4           85          89.0            75
+t=0.5           81          82.0            81
+t=0.75          86          57.6            91
 
 
 The main priority in this case is keeping the number of FN cases as low as possible. FN means that the model predicted the loan was good while in reality, the loan was actaully bad. There will always be some percentage of loans where the loan is predicted good but is actually bad however, we can adjust the t value to ensure this value is kept as low as possible.
@@ -1039,7 +919,7 @@ In the calculations above, the t value of 0.5 was used. In this section, the ROC
 
 Graphing the curve:
 
-![](README_figs/README-unnamed-chunk-41-1.png)<!-- -->
+![](README_figs_final/README-unnamed-chunk-46-1.png)<!-- -->
 
 ```
 ## NULL
@@ -1047,7 +927,7 @@ Graphing the curve:
 The best cutoff to use for this curve that will give the best trade-off between sensitivity and specificity is t=0.35. 
 
 
-Determine how well the model works using test data:
+The model can now be evaluated using the Test data set. 
 
 
 
@@ -1056,12 +936,10 @@ Determine how well the model works using test data:
 Computing the out-of-sample metrics on the Test dataset:
 
 
-```
-##    
-##     FALSE TRUE
-##   0  5259 1958
-##   1    97 1188
-```
+      FALSE   TRUE
+---  ------  -----
+0      5259   1958
+1        97   1188
   
 Overall accuracy = 75.7%
 
@@ -1071,6 +949,7 @@ Specificity = 72.9%
 
 At a cutoff of 0.35, the sensitivity is massively improved from 82.7% in the original model to 92.5% in the revised model. This does not come with a massive trade off in overall model accuracy which has dropped by 6.3% from the original model to 75.7%.
 
+_________________________
 Can complete this section by adding the predicted default probabilities to the Train data set:
 
 
@@ -1078,7 +957,7 @@ Can complete this section by adding the predicted default probabilities to the T
 Train$predicted.risk <- predict(model6, type = "response", newdata = Train)
 ```
 
-## Step 8 - Using the Model
+# Results
 
 
 ### Determine the expected rate of return on the investment
@@ -1090,266 +969,152 @@ For lending club to better screen applicants in future, the predicted risk of de
 First, derive formula to compute the Expected Rate of Return (ERR):
 
 This formula is 
-ERR = (1-predicted.risk)*((int_rate_percent)/100) + (predicted.risk)*(-1))
+    _ERR = (1-predicted.risk)*((int_rate_percent)/100) + (predicted.risk)*(-1))_
+    
 
-```r
-ERR1 <- function(x, y) {
-    ((1-x)*((y)/100) + (x)*(-1))
-}
-
-Train$ERR <- ERR1(Train$predicted.risk, Train$int_rate_percent)
-```
 
 
 Can use the ERR to compute the expected profit. The results will give both positive and negative values with positive indicating an overall profit and negative indicating an overall loss. The overall amount returned is also calculated along with the amount returned based on no default i.e. just going by the interest rate where every loan completes and is fully paid. 
 
+**Profit = ERR*loan_amnt**
+    
+**Amount_Returned = (1+ERR)*(loan_amnt)**
+    
+**Amount_Returned_no_default = (1 + (int_rate/100))*(loan_amnt)**
 
-```r
-Train$profit <- Train$ERR*Train$loan_amnt
 
-Train$amnt_rtrnd <- (1+Train$ERR)*Train$loan_amnt
-
-Train$amnt_rtrnd_no_default <- (1 + (Train$int_rate_percent/100))*(Train$loan_amnt)
-```
 
 __________
 These loans can then be investigated further using the ERR metric and default rate in order to set the most suitable threshold for accepting loans - the lower the threshold, the easier it is to get a loan and hence, the more default loans that would be expected to default.
 
 
 
-```
-## Warning: package 'distr' was built under R version 3.3.3
-```
-
-```
-## Loading required package: startupmsg
-```
-
-```
-## Warning: package 'startupmsg' was built under R version 3.3.3
-```
-
-```
-## Utilities for Start-Up Messages (version 0.9.4)
-```
-
-```
-## For more information see ?"startupmsg", NEWS("startupmsg")
-```
-
-```
-## Loading required package: sfsmisc
-```
-
-```
-## Warning: package 'sfsmisc' was built under R version 3.3.3
-```
-
-```
-## 
-## Attaching package: 'sfsmisc'
-```
-
-```
-## The following object is masked from 'package:dplyr':
-## 
-##     last
-```
-
-```
-## Loading required package: SweaveListingUtils
-```
-
-```
-## Warning: package 'SweaveListingUtils' was built under R version 3.3.3
-```
-
-```
-## Utilities for Sweave Together with TeX 'listings' Package (version 0.7.7)
-```
-
-```
-## NOTE: Support for this package will stop soon.
-## Package 'knitr' is providing the same functionality in a better way.
-## Some functions from package 'base' are intentionally masked ---see SweaveListingMASK().
-## Note that global options are controlled by SweaveListingoptions() ---c.f. ?"SweaveListingoptions".
-```
-
-```
-## For more information see ?"SweaveListingUtils", NEWS("SweaveListingUtils")
-## There is a vignette to this package; try vignette("ExampleSweaveListingUtils").
-```
-
-```
-## 
-## Attaching package: 'SweaveListingUtils'
-```
-
-```
-## The following objects are masked from 'package:base':
-## 
-##     library, require
-```
-
-```
-## Object Oriented Implementation of Distributions (version 2.6.2)
-```
-
-```
-## Attention: Arithmetics on distribution objects are understood as operations on corresponding random variables (r.v.s); see distrARITH().
-## Some functions from package 'stats' are intentionally masked ---see distrMASK().
-## Note that global options are controlled by distroptions() ---c.f. ?"distroptions".
-```
-
-```
-## For more information see ?"distr", NEWS("distr"), as well as
-##   http://distr.r-forge.r-project.org/
-## Package "distrDoc" provides a vignette to this package as well as to several extension packages; try vignette("distr").
-```
-
-```
-## 
-## Attaching package: 'distr'
-```
-
-```
-## The following objects are masked from 'package:dplyr':
-## 
-##     location, n
-```
-
-```
-## The following objects are masked from 'package:stats':
-## 
-##     df, qqplot, sd
-```
 Carrying out the thresholding on the Train data set for the variables:
+
 
 ### Predicted Risk
 
-```
-##           0%          10%          20%          30%          40% 
-## 6.191001e-05 2.729646e-02 5.575031e-02 9.779449e-02 1.511183e-01 
-##          50%          60%          70%          80%          90% 
-## 2.232599e-01 3.233681e-01 4.681397e-01 6.673448e-01 8.748282e-01 
-##         100% 
-## 1.000000e+00
-```
 
-![](README_figs/README-unnamed-chunk-48-1.png)<!-- -->
+-----  ----------
+0%      0.0000619
+10%     0.0272965
+20%     0.0557503
+30%     0.0977945
+40%     0.1511183
+50%     0.2232599
+60%     0.3233681
+70%     0.4681397
+80%     0.6673448
+90%     0.8748282
+100%    1.0000000
+-----  ----------
+
+![](README_figs_final/README-unnamed-chunk-53-1.png)<!-- -->
 
 ```
 ## NULL
 ```
+
+
 ### ERR
 
 
-```r
-Threshold2 <- quantile(Train$ERR, probs = seq(0, 1, 0.1), na.rm = TRUE,
-         names = TRUE, type = 7)
-Threshold2
-```
+-----  -----------
+0%      -1.0000000
+10%     -0.8572956
+20%     -0.6226878
+30%     -0.3970575
+40%     -0.2353821
+50%     -0.1267606
+60%     -0.0519874
+70%      0.0010800
+80%      0.0382403
+90%      0.0635253
+100%     0.1895223
+-----  -----------
+
+![](README_figs_final/README-unnamed-chunk-54-1.png)<!-- -->
 
 ```
-##           0%          10%          20%          30%          40% 
-## -0.999999975 -0.857295621 -0.622687806 -0.397057520 -0.235382053 
-##          50%          60%          70%          80%          90% 
-## -0.126760586 -0.051987366  0.001080032  0.038240275  0.063525338 
-##         100% 
-##  0.189522253
+## NULL
 ```
+
 
 ### Interest Rate
 
-```r
-Threshold3 <- quantile(Train$int_rate_percent, probs = seq(0, 1, 0.1), na.rm = TRUE,
-          names = TRUE, type = 7)
-Threshold3 
-```
+
+-----  -------
+0%       5.420
+10%      7.290
+20%      8.490
+30%     10.250
+40%     11.110
+50%     11.990
+60%     13.110
+70%     14.108
+80%     15.330
+90%     17.140
+100%    24.590
+-----  -------
+
+![](README_figs_final/README-unnamed-chunk-55-1.png)<!-- -->
 
 ```
-##     0%    10%    20%    30%    40%    50%    60%    70%    80%    90% 
-##  5.420  7.290  8.490 10.250 11.110 11.990 13.110 14.108 15.330 17.140 
-##   100% 
-## 24.590
+## NULL
 ```
+
 
 ### Amount Returned 
 
-```r
-Threshold4 <- quantile(Train$amnt_rtrnd, probs = seq(0, 1, 0.1), na.rm = TRUE,
-          names = TRUE, type = 7)
-Threshold4 
-```
 
-```
-##           0%          10%          20%          30%          40% 
-## 8.797839e-05 9.389091e+02 2.255140e+03 3.600739e+03 4.968800e+03 
-##          50%          60%          70%          80%          90% 
-## 6.364799e+03 8.169445e+03 1.030031e+04 1.289279e+04 1.759159e+04 
-##         100% 
-## 4.028686e+04
-```
+-----  -------------
+0%          0.000088
+10%       938.909116
+20%      2255.139654
+30%      3600.739331
+40%      4968.799679
+50%      6364.798940
+60%      8169.444821
+70%     10300.312018
+80%     12892.791616
+90%     17591.594104
+100%    40286.857310
+-----  -------------
 
-```r
-tplot4 <- plot(c(1:1000), quantile(Train$amnt_rtrnd, na.rm = TRUE, probs=c(1:1000)/1000))
-```
-
-![](README_figs/README-unnamed-chunk-51-1.png)<!-- -->
-
-```r
-tplot4
-```
+![](README_figs_final/README-unnamed-chunk-56-1.png)<!-- -->
 
 ```
 ## NULL
 ```
+
+
 ### Amount Returned assuming no default
 
-```r
-Threshold5 <- quantile(Train$amnt_rtrnd_no_default, probs = seq(0, 1, 0.1), na.rm = TRUE,
-          names = TRUE, type = 7)
-Threshold5 
-```
 
-```
-##        0%       10%       20%       30%       40%       50%       60% 
-##   540.000  3459.450  5400.000  6719.400  8566.986 10699.000 12653.920 
-##       70%       80%       90%      100% 
-## 15478.118 18591.990 24916.042 43368.500
-```
+-----  ----------
+0%        540.000
+10%      3459.450
+20%      5400.000
+30%      6719.400
+40%      8566.986
+50%     10699.000
+60%     12653.920
+70%     15478.118
+80%     18591.990
+90%     24916.042
+100%    43368.500
+-----  ----------
 
-```r
-tplot5 <- plot(c(1:1000), quantile(Train$amnt_rtrnd_no_default, na.rm = TRUE, probs=c(1:1000)/1000))
-```
-
-![](README_figs/README-unnamed-chunk-52-1.png)<!-- -->
-
-```r
-tplot5
-```
+![](README_figs_final/README-unnamed-chunk-57-1.png)<!-- -->
 
 ```
 ## NULL
 ```
 
 
-___________________________
-### Important variables
-Using the log of the coefficients, can see which are the most important factors to consider when investigating the success of a loan. For investors, these factors can then be weighted to determine the highest rate of return on an investment portfolio.
-
-### Beating Lending Club's model
-For an investor, the rate of return on an investment is derived from the interest rate. This is derived from a series of factors such as the FICO score, employment length, etc. 
+# Conclusion and Next Steps
 
 
-Hence, the interest rate is essentially an indication of the risk associated with a loan.
-***gradient boosting to be carried out using interest_rate as the dependent variable to determine the contribution of each variable in calculating the interest rate - this gbm model can potentially be compared to glm model for int rate to prove the gbm model is more accurate***
+## Next steps
 
-Overall, the interest rate is not an accurate indicator of the return on investment as it only takes into account the return if the loan is successful. Hence, to determine the expected return on the loan or "Expected rate of return", the risk on each loan must also be included. 
-
-The default rate or probability of default of each loan was calculated for each loan in the training set and is derived  from the model7:
-
-
-```r
-#Train$predicted.risk <- predict(model7, type = "response")
-```
+The following are the next steps I would take to further investigate the Lending Club data:
