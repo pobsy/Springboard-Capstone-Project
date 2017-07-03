@@ -1,0 +1,262 @@
+
+title: "Approved Data Wrangling"
+author: "Paddy"
+date: "18 May 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Approved Loan Data - Data Wrangling 
+
+The following file describes the main steps involved in wrangling the complete Approved Loan data set from Lending Club. The file can be found at the link https://data.world/jaypeedevlin/lending-club-loan-data-2007-11.
+The current Approved Loan data provided on the Lending Club site does not include member FICO scores. Hence, I am using this data from a Data World user's profile as it will allow for more in depth analysis and better comparisons with the Rejected Loan data. 
+
+## Step 1 - Import Data
+
+Import relevent libraries and then import the raw data set (LC data).
+
+```{r}
+library(tidyr)
+library(dplyr)
+library(readr)
+LC_data <- read_csv("~/Springboard/Capstone project/LC data.csv")
+
+```
+## Step 2 - Review Data Set
+
+Display the data and remove any obvious columns - columns with little or no data and columns of little value. Firstly, rename the data frame to the shorter name of "lc". 
+
+```{r}
+lc = LC_data
+
+lc[, c("member_id", "funded_amnt", "sub_grade", "funded_amnt_inv", "url", "desc", "zip_code", "out_prncp", "out_prncp_inv")] <- NULL
+
+```
+
+## Step 3 - Delete Variables in Bulk
+
+### NA columns
+Removing columns made up of mostly NA row i.e. more than 80% of values are NA.
+
+```{r}
+missing_values <- sapply(lc, function(x) {
+  percentage <- sum(is.na(x))/length(x)
+  percentage < 0.2
+  })
+lc <- lc[, missing_values == TRUE]
+lc
+```
+
+This reduces the number of variables from 115 to 50.
+
+### Unique Value Columns
+
+Remove columns with only 1 unique value. These columns will not add any value in the analysis.
+
+Firstly, review the breakdown of the number of unique values in each column. NA values are omitted from this to give a better representation of the columns unique value count.
+
+```{r}
+unique_values <- sapply(lc, function(x) {
+  length(unique(x[!is.na(x)]))
+  })
+unique_values
+```
+There are 5 columns with only one unique value:
+    initial_list_status
+    collections_12_mths_ex_med
+    policy_code
+    application_type
+    chargeoff_within_12_mths
+    
+Remove columns with only 1 unique value.
+
+
+```{r}
+unique_values2 <- sapply(lc, function(x) {
+size <- length(unique(x[!is.na(x)]))
+size > 1
+})
+lc <- lc[, unique_values2 == TRUE]
+```
+If required, can investigate the breakdown of each column's uniqe values. For example, investigating the breakdown of column "grade":
+
+```{r}
+aggregate(data.frame(count = lc$grade), list(value = lc$grade), length)
+```
+However, features can be useful even when they are not spread equally. Hence, they will be left in the dataset. 
+
+Variables "title" and "purpose" look similar. "title" has 20962 unique variables while "purpose" only has 14. "purpose" will be alot more useful than "title" as the reasons for the loan are grouped together better. This will involve alot less formatting than with "title" in order to be able to use the data. Hence, "title" is deleted.
+
+Employment title also contains a significant amount of unique observations that will be difficult to group. As well as this, the employment titles can be quite vague. Hence, this will also be deleted. 
+
+```{r}
+lc[, c("title", "emp_title")] <- NULL
+```
+
+## Step 4 - Formatting
+
+### Loan Purpose
+There are 5 NA values which need to be assigned to the "other" column. 
+```{r}
+ lc <- lc %>% mutate(purpose = replace(purpose, is.na(purpose), "other"))
+```
+
+There are quite a few uniqe values for loan purpose. As these are characters, the analysis of a large number of unique values for this variable will be difficult. Hence, the observations need to be grouped. Investigate the uniqe values and group where practical. 
+
+```{r}
+table(lc$purpose)
+lc$purpose <- gsub("car|home_improvement|house|wedding", "major purchase", lc1$purpose)
+lc$purpose <- gsub("medical|moving|other|renewable_energy|vacation", "other", lc1$purpose)
+lc$purpose <- gsub("credit_major purchased", "credit_card", lc1$purpose)
+```
+### Interest Rate
+Int_rate column is currently classed as a character. Removing the % sign, converting to numeric and changing the name of the column to specify the unit is in percent.
+
+```{r}
+ lc$int_rate <- gsub('\\%', "", lc$int_rate)
+ lc$int_rate <- as.numeric(lc$int_rate)
+ 
+ library(data.table)
+ setnames(lc, "int_rate", "int_rate_percent")
+
+```
+### Home Ownership
+Bin all "OWN" observations to the "MORTGAGE" observation and bin all NA observations to the "OTHER" observation. 
+
+```{r}
+lc$home_ownership <- gsub('OWN', "MORTGAGE", lc$home_ownership)
+lc$home_ownership <- gsub('NONE', "OTHER", lc$home_ownership)
+```
+
+### Term
+Remove the word "months"" in each observation in "term" column, convert to numeric and change the name of the column to specify unit is in months. 
+
+```{r}
+lc$term <- gsub("months", lc$term)
+lc$term <- as.numeric(lc$term)
+setnames(lc, "term", "term_mths")
+```
+
+### Employment Length
+Remove the word "years" in each observation in "emp_length" column and change name of the column to show the time period is in years. Change <1 years to 0 and 10+ years to 10. Leave as character for the moment as it includes NA values (NA coersion).  
+
+```{r}
+lc$emp_length <- gsub("year|years", "", lc$emp_length)
+lc$emp_length <- gsub("< 1", "0", lc$emp_length)
+lc$emp_length <- gsub("\\+", "", lc$emp_length)
+lc$emp_length <- as.numeric(lc$emp_length)
+setnames(lc, "emp_length", "emp_length_yrs")
+```
+### Fico Range Mean
+Want to combine the columns for fico range (i.e. high and low) into just one column displaying the mean of both - fico_range_mean. This variable will then be normalised and used to compare fico ranges of rejected candidates.
+
+```{r}
+lc$fico_range_mean <- rowMeans(lc[c('fico_range_low', 'fico_range_high')], na.rm=TRUE)
+```
+### Loan Status
+Want to categorize this variable into good and bad indicators for the loan.
+
+Firstly, want to rename the "Does not meet the credit policy. Status: " of some observations so that they can be grouped with the relevent loan status'.
+
+```{r}
+lc$loan_status = gsub(pattern = "Does not meet the credit policy. Status:", replacement = "", x = (lc$loan_status))
+```
+
+Treat "late (16-30 days)", "late (31-120 days)", "default" and "charged off" values as bad indicators.
+Treat "fully paid", "in grace period", "current" as good indicators. 
+
+```{r}
+
+bad_indicators <- c("Late (16-30 days)", "Late (31-120 days)", "Default", "Charged Off")
+lc$is_bad <- ifelse(lc$loan_status %in% bad_indicators, 1,
+                    ifelse(lc$loan_status=="", NA,
+                    0))
+```
+### Issue Date 
+This is an awkard date and is currently in character format. In order to convert, must first add in a day value ("1" will be added in as the default day for all observations).
+Can then break up the data into separate columns for year and month which may be useful for further analysis. 
+
+```{r}
+
+lc$issue_d = paste("1", as.character(lc$issue_d))
+lc$issue_d = as.Date(lc$issue_d, format = "%d %b-%y")
+
+lc$year_issued <- year(lc$issue_d)
+lc$month_issued <- month(lc$issue_d)
+```
+
+### Revolving Utilisation 
+Similar to interest rate, remove the % sign and set the resulting value as a numeric.
+
+```{r}
+lc$revol_util <- gsub('\\%', "", lc$revol_util)
+lc$revol_util <- as.numeric(lc$revol_util)
+```
+
+## Numeric Columns
+Want to create a separate data frame for numeric columns with which we can compare good and bad loans for the initial exloration.
+
+```{r}
+numeric_cols <- sapply(lc, is.numeric)
+df.lng <- melt(lc[,numeric_cols], id="is_bad")
+```
+
+Save this data frame.
+
+This data set will be used to compare the difference between good and bad loans for each of the numeric variables.
+
+```{r}
+write.csv(df.lng, file = "lc_numeric_cols.csv")
+```
+
+## Step 5 - Normalising Data
+
+There are 2 ways to do this - normalizing or standardizing.
+
+I've decided to go with standardizing as it makes it easier to trasfer the scale and center to other variables.The following commands create a new standardized column for the fico range high, then add it to the original data frame and finally display all columns in this data frame.
+
+```{r}
+lc$fico_norm <- scale(lc$fico_range_mean, center = TRUE, scale = TRUE)
+
+```
+Save this dataset as "lc_formatted":
+
+```{r}
+write.csv(lc, file = "lc_formatted.csv")
+```
+
+## Step 6 - One Hot Encoding
+
+Can potentially change this to a new df name as this will mainly be used for the data analysis whilst everything up to this point will be used for data visualisation. Hence, will change to lc_OHE.
+ 
+```{r}
+
+library(ade4)
+
+ lc_OHE = lc
+ ohe_feats = c('term_mths', 'grade', 'emp_length_yrs', 'home_ownership', 'verification_status', 'loan_status', 'pymnt_plan', 'purpose', 'delinq_2yrs', 'inq_last_6mths', 'pub_rec', 'pub_rec_bankruptcies')
+ for(f in ohe_feats) {
+     df_dummy1 = acm.disjonctif(as.data.frame(as.factor(unlist(lc[f])))) 
+     lc_OHE = cbind(lc_OHE, df_dummy1)
+
+}
+```
+This results in a very messy column name on each of the new OHE columns. Renaming the columns. 
+
+colnames(df_dummy1) = sort(unique(lc[f])) should work as long as the lc[f] <- NULL is omitted from the code. This omission will also ensure that the original columns are kept.
+
+Instead, I have gone with a simple gsub function that removes the common string across all columns "as.factor(unlist(lc[f])).".
+
+```{r}
+colnames(lc_OHE) = gsub(pattern = "as.factor(unlist(lc[f])).", replacement = "", x = colnames(lc_OHE), fixed = TRUE)
+```
+That is the end of the data wrangling - can now save this data frame.
+
+```{r}
+write.csv(lc_OHE, file = "lc_cleaned.csv")
+```
+
