@@ -1,0 +1,129 @@
+---
+title: "Rejected Data Wrangling"
+author: "Paddy"
+date: "18 May 2017"
+output: html_document
+---
+
+# Rejected Loan Data - Data Wrangling
+
+The raw data for the rejected loans can be found on the Lending Club website (https://www.lendingclub.com/info/download-data.action) - I have chosen the 2007 to 2011 file.
+
+As before with the approved data, the rejected data needs to be cleaned and put into a format that will allow for comparison with the approved data. Following similar steps to the approved loan data wrangling:
+
+## Step 1 
+Import relevent libraries and then import the raw data set (LC data).
+
+```{r}
+library(tidyr)
+library(dplyr)
+library(readr)
+LC_data_rejected <- read_csv("~/Springboard/Capstone project/LC_data_rejected.csv")
+```
+## Step 2 - Review Data Set
+
+Display the data and remove any columns that will not be useful for the analysis.  
+
+```{r}
+lcr = LC_data_rejected
+
+unique_values_r <- sapply(lcr, function(x) {
+  length(unique(x[!is.na(x)]))
+  })
+unique_values_r
+
+```
+ unique_values_r
+    Amount Requested     Application Date           Loan Title           Risk_Score Debt-To-Income Ratio             Zip Code 
+                1848                 2047                60319                  485                21655                  977 
+               State    Employment Length          Policy Code 
+                  51                   12                    1
+                  
+There are 60,000+ unique values for the "loan title" feature hence, this will be removed. 
+
+There is only 1 unique value for policy code. This feature was also removed in the accepted data set hence this will also be removed here. Likewise with zip code. Everything else will be kept.
+
+```{r}
+lcr[, c("Loan Title", "Zip Code", "Policy Code", "State")] <- NULL
+```
+## Step 3 - Formatting
+
+Following similar steps to the approved data set, the goal is to format the data to allow for it to be combined with the approved data set. Features to format include employment length, DTI ratio, amount requested and application date. A new column is also required to state that this is part of the rejected data. 
+
+A similar "status" column will be required for the approved data. 
+
+### Employment Length
+Remove the word "years" in each observation in "emp_length" column and change name of the column to show the time period is in years. Change <1 years to 0 and 10+ years to 10. Leave as character for the moment as it includes NA values (NA coersion).  
+
+```{r}
+lcr$`Employment Length` <- gsub("year|years", "", lcr$`Employment Length`)
+lcr$`Employment Length` <- gsub("< 1", "0", lcr$`Employment Length`)
+lcr$`Employment Length` <- gsub("\\+", "", lcr$`Employment Length`)
+setnames(lcr, "Employment Length", "emp_length_yrs")
+```
+### DTI
+Remove the % sign, convert to numeric and change the name of the column to match the name in the approved data set. 
+
+```{r}
+ lcr$`Debt-To-Income Ratio` <- gsub('\\%', "", lcr$`Debt-To-Income Ratio`)
+ lcr$`Debt-To-Income Ratio` <- as.numeric(lcr$`Debt-To-Income Ratio`)
+ 
+ library(data.table)
+ setnames(lcr, "Debt-To-Income Ratio", "dti")
+```
+
+### Name Changes
+
+Change the names of the columns that match up with the original lc data from the approved loans. This will allow for the 2 data sets to be combined. The columns to be changed are "amount requested", "application date" and "risk score".
+
+```{r}
+setnames(lcr, "Amount Requested", "loan_amnt")
+
+setnames(lcr, "Application Date", "issue_d")
+
+setnames(lcr, "Risk_Score", "fico_range_mean")
+```
+### Status and Loan Status
+Add in a "Status" feature to show the status of the loan. In this case, it will all be "rejected". Add in "loan status" feature so that the data is compatible with the approved loan data. The value for each row will be "NA".
+
+```{r}
+lcr <- lcr %>% mutate("loan_status" = "NA")
+lcr <- lcr %>% mutate("Status" = "rejected")
+```
+### Date Formatting
+The date is currently classified as a character. This needs to be converted to a "date" format. 
+
+```{r}
+lcr$issue_d <- as.Date(lcr$issue_d, format="%d/%m/%Y")
+```
+
+Save the file and then combine with the required features in the approved loan data. 
+
+```{r}
+write.csv(lcr, file = "lcr_cleaned.csv")
+```
+
+# Approved and Rejected Data
+Now that both the rejected and approved data sets have been cleaned, the common variables in each data set can determined and both data sets can be combined for further analysis. 
+
+
+Firstly, want to select just the columns from the approved data set that will be comparible with the rejected data set. 
+Add in a "Status" feature in the approved data set and set to "approved".
+Join both data frames using the union() function. 
+
+
+```{r}
+lc_comparison = lc
+lc_comparison <- select(lc_comparison, emp_length_yrs, loan_amnt, issue_d, fico_range_mean, loan_status, dti)
+lc_comparison <- lc_comparison  %>% mutate("Status" = "approved")
+lc_comp <- union(lcr, lc_comparison)
+```
+Next, need to normalise the FICO column which is done using similar code to what was used for the approved data.
+
+```{r}
+lc_comp$fico_norm <- scale(lc_comp$fico_range_mean, center = TRUE, scale = TRUE)
+
+write.csv(lc_comp, file = "lc_combined.csv")
+```
+
+
