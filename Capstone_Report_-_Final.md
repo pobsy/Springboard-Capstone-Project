@@ -320,13 +320,18 @@ Predict the most frequent outcome (i.e. default loan or complete loan) of all ob
 
 ```r
 cm_baseline = table(lc2$is_bad, sign(lc2$is_bad))
+```
+
+```r
 cm_baseline
 ```
 
-   
-        0     1
-  0 36103     0
-  1     0  6432
+```
+##    
+##         0     1
+##   0 36103     0
+##   1     0  6432
+```
 
 This produces the following table. The use of the sign function can derive a smarter baseline however in this case, both tables (actual results and smart baseline) derive the same accuracy of 84.88%.
 
@@ -836,26 +841,29 @@ Use the predict function on the Test data with a threshold value of 0.5 to begin
 ```r
 predict1 = predict(model6, type = "response", newdata = Train)
 cmTrain <- table(Train$is_bad, predict1 > 0.5)
-
-cmTrain
 ```
 
-   
-    FALSE  TRUE
-  0 23500  5360
-  1   913  4231
+
+```
+##    
+##     FALSE  TRUE
+##   0 23500  5360
+##   1   913  4231
+```
+
 
 ```r
 predictTest1 = predict(model6, type = "response", newdata = Test)
 cmTest <- table(Test$is_bad, predictTest1 > 0.5)
-
-cmTest
 ```
 
-   
-    FALSE TRUE
-  0  5932 1285
-  1   222 1063
+
+```
+##    
+##     FALSE TRUE
+##   0  5932 1285
+##   1   222 1063
+```
 
 This matrix allows for calculations to be made regarding the accuracy of the model.
           
@@ -1022,7 +1030,7 @@ ROCRperf = ROCR::performance(ROCRpred, "tpr", "fpr")
 p2 <- plot(ROCRperf, colorize = TRUE, print.cutoffs.at=seq(0,1,by=0.1), text.adj = c(-0.2, 1.7))
 ```
 
-![](README_figs_final/README-unnamed-chunk-46-1.png)<!-- -->
+![](README_figs_final/README-unnamed-chunk-50-1.png)<!-- -->
 
 ```r
 p2
@@ -1046,13 +1054,19 @@ Computing the out-of-sample metrics on the Test dataset:
 ```r
 predictTest2 = predict(model6, type = "response", newdata = Test)
 tableTest <- table(Test$is_bad, predictTest2 > 0.35)
-knitr :: kable(tableTest)
 ```
 
-      FALSE   TRUE
----  ------  -----
-0      5259   1958
-1        97   1188
+
+```r
+tableTest
+```
+
+```
+##    
+##     FALSE TRUE
+##   0  5259 1958
+##   1    97 1188
+```
   
 Overall accuracy = 75.7%
 
@@ -1180,7 +1194,7 @@ Threshold1
 tplot1 <- plot(c(1:1000), quantile(Train$predicted.risk, na.rm = TRUE, probs=c(1:1000)/1000))
 ```
 
-![](README_figs_final/README-unnamed-chunk-53-1.png)<!-- -->
+![](README_figs_final/README-unnamed-chunk-58-1.png)<!-- -->
 
 ```r
 tplot1
@@ -1252,7 +1266,7 @@ Threshold2
 tplot2 <- plot(c(1:1000), quantile(Train$ERR, na.rm = TRUE, probs=c(1:1000)/1000))
 ```
 
-![](README_figs_final/README-unnamed-chunk-54-1.png)<!-- -->
+![](README_figs_final/README-unnamed-chunk-59-1.png)<!-- -->
 
 ```r
 tplot2
@@ -1284,7 +1298,7 @@ Can also see the quantile distribution for the interest rate, amount returned an
 100%    24.590
 -----  -------
 
-![](README_figs_final/README-unnamed-chunk-55-1.png)<!-- -->
+![](README_figs_final/README-unnamed-chunk-60-1.png)<!-- -->
 
 ```
 ## NULL
@@ -1308,7 +1322,7 @@ Can also see the quantile distribution for the interest rate, amount returned an
 100%    40286.857310
 -----  -------------
 
-![](README_figs_final/README-unnamed-chunk-56-1.png)<!-- -->
+![](README_figs_final/README-unnamed-chunk-61-1.png)<!-- -->
 
 ```
 ## NULL
@@ -1332,7 +1346,7 @@ Can also see the quantile distribution for the interest rate, amount returned an
 100%    43368.500
 -----  ----------
 
-![](README_figs_final/README-unnamed-chunk-57-1.png)<!-- -->
+![](README_figs_final/README-unnamed-chunk-62-1.png)<!-- -->
 
 ```
 ## NULL
