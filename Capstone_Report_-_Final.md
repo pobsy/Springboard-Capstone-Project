@@ -318,10 +318,16 @@ Once the model has been built, the "Test" dataset will be used for its evalution
 Predict the most frequent outcome (i.e. default loan or complete loan) of all observations. This is done by counting the actual number of default loans vs the number of complete loans to give the accuracy of the dataset. 
 
 
-          0      1
----  ------  -----
-0     36103      0
-1         0   6432
+```r
+cm_baseline = table(lc2$is_bad, sign(lc2$is_bad))
+cm_baseline
+```
+
+   
+        0     1
+  0 36103     0
+  1     0  6432
+
 This produces the following table. The use of the sign function can derive a smarter baseline however in this case, both tables (actual results and smart baseline) derive the same accuracy of 84.88%.
 
 Looking at the table and results however, the baseline of 84.88% is quite high due to the fact that the majority of cases are 0. To make the prediction more insightful, the data will be undersampled in Traind_under. This will comprise 50% 0 values and 50% 1 values. This way the baseline accuracy will be 50%. This will give the prediction based on the model built alot more value.
@@ -333,6 +339,15 @@ Using CaTools package, split the data into 2 sections - test data and train data
 
 
 
+```r
+library(caTools)
+library(ROSE)
+set.seed(80)
+split = sample.split(lc2$is_bad, SplitRatio = 0.80)
+Train = subset(lc2, split == TRUE)
+Train_under <- ovun.sample(is_bad~., data = lc2, method="under", N = 12000, seed = 40)$data
+Test = subset(lc2, split == FALSE)
+```
 
 Train data is the data set based on the original lc2 data. Alongside this data set, Train_under will also be used as this will give a clearer indication of the accuracy of the model that is built for reasons discussed in step 1. Train_under will be used to refine the model which will be derived from the Train data set.
 
@@ -341,6 +356,12 @@ Train data is the data set based on the original lc2 data. Alongside this data s
 Model1 will take into account all variables apart from member id and loan status. The idea is to start with the majority of the variables and gradually narrow down until only the significant variables are included in the model.
 
 ### Model 1
+
+```r
+ model1 <- glm(is_bad ~. -id -loan_status, data = Train, family = "binomial")
+summary1 = summary(model1)
+summary1
+```
 
 ```
 ## 
@@ -508,6 +529,12 @@ Model1 gave several significant values however it did not converge hence the nex
 
 ### Model 2
 
+```r
+ model2 <- glm(is_bad ~ loan_amnt + term_mths + int_rate_percent + installment + grade + annual_inc + total_acc + last_fico_range_high + meet_cred_pol + fico_norm, data = Train, family = "binomial")
+summary2 = summary(model2)
+summary2
+```
+
 ```
 ## 
 ## Call:
@@ -552,6 +579,13 @@ Model1 gave several significant values however it did not converge hence the nex
 
 ### Model 3
 
+```r
+model3 <- glm(is_bad ~ loan_amnt + term_mths + int_rate_percent + grade + annual_inc + total_acc + last_fico_range_high + meet_cred_pol + fico_norm, data = Train, family = "binomial")
+
+summary3 = summary(model3)
+summary3
+```
+
 ```
 ## 
 ## Call:
@@ -594,6 +628,13 @@ Model1 gave several significant values however it did not converge hence the nex
 ```
 
 ### Model 4
+
+```r
+model4 <- glm(is_bad ~ loan_amnt + term_mths + purpose + int_rate_percent + grade + annual_inc + total_acc + last_fico_range_high + meet_cred_pol + fico_norm, data = Train, family = "binomial")
+
+summary4 = summary(model4)
+summary4
+```
 
 ```
 ## 
@@ -651,6 +692,13 @@ Model1 gave several significant values however it did not converge hence the nex
 ### Model 5
 Running this model on the Train_under data to see how it compares:
 
+```r
+model5 <- glm(is_bad ~ loan_amnt + term_mths + purpose + int_rate_percent + grade + annual_inc + total_acc + last_fico_range_high + meet_cred_pol + fico_norm, data = Train_under, family = "binomial")
+
+summary5 = summary(model5)
+summary5
+```
+
 ```
 ## 
 ## Call:
@@ -705,6 +753,12 @@ Running this model on the Train_under data to see how it compares:
 After several iterations, model4 is a good fit and delivers an accurate model as the AIC, residual deviance and NULL deviance have all reduced. However, a stronger model can be achieved using an altered data set ("Train_under") which has been undersampled. Comparing model 4 to model 5 (where the undersampled data is used), the accuracy has improved based on the AIC score reduction from 24716 in the Train data to 9927.4. Similarly, the goodness of fit of the model has improved as both the NULL deviance and residual deviance have reduced with the use of the Train_under data. 
 
 Getting the exp of the coefficients to make the data more readable:
+
+```r
+model5_tab <- coef(summary(model5))
+model5_tab[, "Estimate"] <- exp(coef(model5))
+model5_tab
+```
 
 ```
 ##                               Estimate   Std. Error      z value
@@ -773,12 +827,30 @@ The higher the value, the greater the impact on the model and the overall probab
 As model5 was strong, this will be chosen for the preiction stage on the Train data. The na's will be removed to ensure all columns are of equal length. The resulting model6 will be used to obtain a confusion matrix for analysis.
 
 
+```r
+model6 <- glm(is_bad ~ loan_amnt + term_mths + purpose + int_rate_percent + grade + annual_inc + total_acc + last_fico_range_high + meet_cred_pol + fico_norm, data = Train_under, family = "binomial", na.action = na.exclude)
+summary6 <- summary(model6)
+```
 Use the predict function on the Test data with a threshold value of 0.5 to begin with. This will be adjusted for optimal position.
+
+```r
+predict1 = predict(model6, type = "response", newdata = Train)
+cmTrain <- table(Train$is_bad, predict1 > 0.5)
+
+knitr :: kable(cmTrain)
+```
 
       FALSE   TRUE
 ---  ------  -----
 0     23500   5360
 1       913   4231
+
+```r
+predictTest1 = predict(model6, type = "response", newdata = Test)
+cmTest <- table(Test$is_bad, predictTest1 > 0.5)
+
+knitr :: kable(cmTest)
+```
 
       FALSE   TRUE
 ---  ------  -----
@@ -857,6 +929,13 @@ Hence, a high AUC value is more desirable as it indicate a better predictor powe
 Using the Train data to get the AUC:
 
 
+```r
+library(ROCR)
+pred = ROCR::prediction(predict1, Train$is_bad)
+plotAUC <- as.numeric(performance(pred, "auc")@y.values)
+plotAUC
+```
+
 ```
 ## [1] 0.8914029
 ```
@@ -869,6 +948,13 @@ Hence, for this particular model, sensitivity is very important to ensure the nu
 Investigating overall accuracy, sensivity, and specificity for different t values:
 
 
+```r
+predict1 = predict(model6, type = "response", newdata = Train)
+cm_t1 <- table(Train$is_bad, predict1 > 0.3)
+cm_t2 <- table(Train$is_bad, predict1 > 0.4)
+cm_t3 <- table(Train$is_bad, predict1 > 0.5)
+cm_t4 <- table(Train$is_bad, predict1 > 0.75)
+```
 
 #### t>0.3
 
@@ -919,7 +1005,19 @@ In the calculations above, the t value of 0.5 was used. In this section, the ROC
 
 Graphing the curve:
 
+
+```r
+ROCRpred = ROCR::prediction(predict1, Train$is_bad)
+ROCRperf = ROCR::performance(ROCRpred, "tpr", "fpr")
+
+p2 <- plot(ROCRperf, colorize = TRUE, print.cutoffs.at=seq(0,1,by=0.1), text.adj = c(-0.2, 1.7))
+```
+
 ![](README_figs_final/README-unnamed-chunk-46-1.png)<!-- -->
+
+```r
+p2
+```
 
 ```
 ## NULL
@@ -936,6 +1034,12 @@ The model can now be evaluated using the Test data set.
 Computing the out-of-sample metrics on the Test dataset:
 
 
+```r
+predictTest2 = predict(model6, type = "response", newdata = Test)
+tableTest <- table(Test$is_bad, predictTest2 > 0.35)
+knitr :: kable(tableTest)
+```
+
       FALSE   TRUE
 ---  ------  -----
 0      5259   1958
@@ -947,9 +1051,9 @@ Sensitivity = 92.5%
 
 Specificity = 72.9%
 
-At a cutoff of 0.35, the sensitivity is massively improved from 82.7% in the original model to 92.5% in the revised model. This does not come with a massive trade off in overall model accuracy which has dropped by 6.3% from the original model to 75.7%.
+At a cutoff of 0.35, the sensitivity is massively improved from 82.7% in the original model to 92.5% in the revised model. This does not come with a massive trade off in overall model accuracy which has only dropped by 6.3% from the original model to 75.7%.
 
-_________________________
+
 Can complete this section by adding the predicted default probabilities to the Train data set:
 
 
@@ -969,10 +1073,20 @@ For lending club to better screen applicants in future, the predicted risk of de
 First, derive formula to compute the Expected Rate of Return (ERR):
 
 This formula is 
-    _ERR = (1-predicted.risk)*((int_rate_percent)/100) + (predicted.risk)*(-1))_
+    **ERR = (1-predicted.risk)*((int_rate_percent)/100) + (predicted.risk)*(-1))**
     
 
+```r
+ERR1 <- function(x, y) {
+    ((1-x)*((y)/100) + (x)*(-1))
+}
 
+Train$ERR <- ERR1(Train$predicted.risk, Train$int_rate_percent)
+```
+
+
+
+### Determine other metrics
 
 Can use the ERR to compute the expected profit. The results will give both positive and negative values with positive indicating an overall profit and negative indicating an overall loss. The overall amount returned is also calculated along with the amount returned based on no default i.e. just going by the interest rate where every loan completes and is fully paid. 
 
@@ -983,10 +1097,17 @@ Can use the ERR to compute the expected profit. The results will give both posit
 **Amount_Returned_no_default = (1 + (int_rate/100))*(loan_amnt)**
 
 
+```r
+Train$profit <- Train$ERR*Train$loan_amnt
 
-__________
-These loans can then be investigated further using the ERR metric and default rate in order to set the most suitable threshold for accepting loans - the lower the threshold, the easier it is to get a loan and hence, the more default loans that would be expected to default.
+Train$amnt_rtrnd <- (1+Train$ERR)*Train$loan_amnt
 
+Train$amnt_rtrnd_no_default <- (1 + (Train$int_rate_percent/100))*(Train$loan_amnt)
+```
+
+### Thresholding
+
+These loans can then be investigated further using the ERR metric and default rate in order to set the most suitable threshold for accepting loans - the threshold value describes the cut off after which no further loans are accepted. 
 
 
 Carrying out the thresholding on the Train data set for the variables:
@@ -995,28 +1116,145 @@ Carrying out the thresholding on the Train data set for the variables:
 ### Predicted Risk
 
 
+```r
+Threshold1 <- quantile(Train$predicted.risk, probs = seq(0, 1, 0.01), na.rm = TRUE,
+          names = TRUE, type = 7)
+knitr :: kable(Threshold1)
+```
+
+
+
 -----  ----------
 0%      0.0000619
+1%      0.0087657
+2%      0.0111959
+3%      0.0131829
+4%      0.0150801
+5%      0.0169470
+6%      0.0188373
+7%      0.0207603
+8%      0.0228855
+9%      0.0250229
 10%     0.0272965
+11%     0.0294098
+12%     0.0320676
+13%     0.0345387
+14%     0.0371730
+15%     0.0400202
+16%     0.0425405
+17%     0.0455788
+18%     0.0491177
+19%     0.0524301
 20%     0.0557503
+21%     0.0593358
+22%     0.0630582
+23%     0.0671752
+24%     0.0709963
+25%     0.0752847
+26%     0.0792863
+27%     0.0833860
+28%     0.0880929
+29%     0.0928299
 30%     0.0977945
+31%     0.1025354
+32%     0.1075708
+33%     0.1124970
+34%     0.1174707
+35%     0.1222933
+36%     0.1275037
+37%     0.1330279
+38%     0.1386368
+39%     0.1445972
 40%     0.1511183
+41%     0.1572129
+42%     0.1636006
+43%     0.1699230
+44%     0.1765343
+45%     0.1840080
+46%     0.1914879
+47%     0.1982949
+48%     0.2066236
+49%     0.2144924
 50%     0.2232599
+51%     0.2316121
+52%     0.2404365
+53%     0.2492688
+54%     0.2587112
+55%     0.2690772
+56%     0.2783455
+57%     0.2897697
+58%     0.3002619
+59%     0.3109340
 60%     0.3233681
+61%     0.3363941
+62%     0.3495367
+63%     0.3619136
+64%     0.3750250
+65%     0.3890417
+66%     0.4047381
+67%     0.4199455
+68%     0.4344466
+69%     0.4522667
 70%     0.4681397
+71%     0.4858763
+72%     0.5039227
+73%     0.5221060
+74%     0.5421356
+75%     0.5626302
+76%     0.5827127
+77%     0.6023544
+78%     0.6253415
+79%     0.6454823
 80%     0.6673448
+81%     0.6866083
+82%     0.7075909
+83%     0.7279865
+84%     0.7511216
+85%     0.7728559
+86%     0.7950017
+87%     0.8175121
+88%     0.8381093
+89%     0.8567946
 90%     0.8748282
+91%     0.8917824
+92%     0.9088951
+93%     0.9234325
+94%     0.9375321
+95%     0.9506059
+96%     0.9595223
+97%     0.9672678
+98%     0.9753540
+99%     0.9837946
 100%    1.0000000
 -----  ----------
 
+```r
+tplot1 <- plot(c(1:1000), quantile(Train$predicted.risk, na.rm = TRUE, probs=c(1:1000)/1000))
+```
+
 ![](README_figs_final/README-unnamed-chunk-53-1.png)<!-- -->
+
+```r
+tplot1
+```
 
 ```
 ## NULL
 ```
 
+As calculated in section 6, the optimal threshold value for the predicted risk is t=0.35. This value corresponds to an accuracy of 76.7% and a sensitivity of 92.5%. Other t-values resulted in a higher accuracy however for the purpose of this project, it is vital that the rate of FN loans (i.e. loans that are default but predicted as good) is kept as low as possible. 
+
+Looking at the quantile distribution above, a t-value of 0.35 corresponds to an acceptance rate of 62%. Hence, the best 62% of loans (i.e. with the lowest probability of default) should be accepted, while the remainder should be rejected.  
 
 ### ERR
+
+
+```r
+Threshold2 <- quantile(Train$ERR, probs = seq(0, 1, 0.1), na.rm = TRUE,
+         names = TRUE, type = 7)
+knitr :: kable(Threshold2)
+```
+
 
 
 -----  -----------
@@ -1033,12 +1271,24 @@ Carrying out the thresholding on the Train data set for the variables:
 100%     0.1895223
 -----  -----------
 
+```r
+tplot2 <- plot(c(1:1000), quantile(Train$ERR, na.rm = TRUE, probs=c(1:1000)/1000))
+```
+
 ![](README_figs_final/README-unnamed-chunk-54-1.png)<!-- -->
+
+```r
+tplot2
+```
 
 ```
 ## NULL
 ```
 
+The ERR quantile distribution is slightly different. For example, for the worst 10% of loans, there is an expected loss of 85% form the orignal sum of the loan. The ERR is predicted as negative for the first 69% of loans which means that there will be an overall loss for the worst 69% of accepted loans. Hence, in order to maximise the profit, 100% of loans should be accepted. 
+
+
+Can also see the quantile distribution for the interest rate, amount returned and amount returned assuming no default.
 
 ### Interest Rate
 
@@ -1114,7 +1364,25 @@ Carrying out the thresholding on the Train data set for the variables:
 
 # Conclusion and Next Steps
 
+Ultimately, the model above calls into question the acceptance criteria of the loans. The optimal acceptance rate based on the predicted default rate is 62% of loans. From this calculation is would appear that Lending Club's screening process may need to be refined in order to keep the predicted loan risk at optimal. 
+
+With that said, interestingly, the quantile distribution for the ERR (Expected Rate of Return) tells a different story. 62% of loans accepted results in a rate of return of -3.9%. Whereas if 100% of the loans are accepted, the overall rate of return is 18.9%. 
+
+Taking these two variables into account, it is clear there is a trade-off between the ERR and the Predicted Risk. Hence, it depends on the criteria of Lending Club: to make as much profit overall, or to ensure fewer defaults for the investors.
+
+
 
 ## Next steps
 
 The following are the next steps I would take to further investigate the Lending Club data:
+
+1. Model comparison 
+      * the logistic regression model has worked well and has an improved accuracy than the baseline as discussed. However, it would be interesting to run a GBM model to see the comparison between the two. 
+      
+2. Interest rate
+      * in terms of the accepted loan data which was used for the purpose of this analysis, the interest rate plays a significant role in both the loan attractiveness to potential investors (i.e. how much profit can be made on a successful loan) and to the probability of default. This is mainly because it is calculated from other variables that describe an applicants credit history such as FICO score. 
+      * hence, it would be interesting to analyse the interest rate and build a model to determine the main variables that impact the calculation of interest rate. This could then be compared to model 6 used in this project, to see how the interest rate impacts the overall probability of default and to determine if the interest rate can be refined in any way. 
+      
+3. Rejected data
+      * the rejected data was wrangled in the early stages of the project and combined with common factors in the accepted data. It would be interesting to compare the 2 data sets to build a model that describes the acceptance criteria of a loan. The expectation would be to refine the acceptance criteria and improve the overall probability of default of the accepted loans. 
+      * this would be done by removing the worst loans from the approved loan data set and adding in better loans from the rejected loan data set that meet the refined acceptance criteria from the model).
