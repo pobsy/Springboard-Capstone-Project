@@ -364,38 +364,26 @@ _________________________________</p>
 <div id="step-1---get-the-baseline" class="section level3">
 <h3>Step 1 - Get the Baseline</h3>
 <p>Predict the most frequent outcome (i.e. default loan or complete loan) of all observations. This is done by counting the actual number of default loans vs the number of complete loans to give the accuracy of the dataset.</p>
-<table>
-<thead>
-<tr class="header">
-<th></th>
-<th align="right">0</th>
-<th align="right">1</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>0</td>
-<td align="right">36103</td>
-<td align="right">0</td>
-</tr>
-<tr class="even">
-<td>1</td>
-<td align="right">0</td>
-<td align="right">6432</td>
-</tr>
-<tr class="odd">
-<td>This</td>
-<td align="right">produces</td>
-<td align="right">the following table. The use of the sign function can derive a smarter baseline however in this case, both tables (actual results and smart baseline) derive the same accuracy of 84.88%.</td>
-</tr>
-</tbody>
-</table>
+<pre class="r"><code>cm_baseline = table(lc2$is_bad, sign(lc2$is_bad))</code></pre>
+<pre class="r"><code>cm_baseline</code></pre>
+<pre><code>##    
+##         0     1
+##   0 36103     0
+##   1     0  6432</code></pre>
+<p>This produces the following table. The use of the sign function can derive a smarter baseline however in this case, both tables (actual results and smart baseline) derive the same accuracy of 84.88%.</p>
 <p>Looking at the table and results however, the baseline of 84.88% is quite high due to the fact that the majority of cases are 0. To make the prediction more insightful, the data will be undersampled in Traind_under. This will comprise 50% 0 values and 50% 1 values. This way the baseline accuracy will be 50%. This will give the prediction based on the model built alot more value.</p>
 </div>
 </div>
 <div id="step-2---split-the-data" class="section level2">
 <h2>Step 2 - Split the data</h2>
 <p>Using CaTools package, split the data into 2 sections - test data and train data. The ratio for the divide will be 80/20 i.e. 80% of the dataset will be made up of train data “Train” and the remaining 20% will be test data “Test”.</p>
+<pre class="r"><code>library(caTools)
+library(ROSE)
+set.seed(80)
+split = sample.split(lc2$is_bad, SplitRatio = 0.80)
+Train = subset(lc2, split == TRUE)
+Train_under &lt;- ovun.sample(is_bad~., data = lc2, method=&quot;under&quot;, N = 12000, seed = 40)$data
+Test = subset(lc2, split == FALSE)</code></pre>
 <p>Train data is the data set based on the original lc2 data. Alongside this data set, Train_under will also be used as this will give a clearer indication of the accuracy of the model that is built for reasons discussed in step 1. Train_under will be used to refine the model which will be derived from the Train data set.</p>
 </div>
 <div id="step-3---run-logistic-regression-on-the-model" class="section level2">
@@ -403,6 +391,9 @@ _________________________________</p>
 <p>Model1 will take into account all variables apart from member id and loan status. The idea is to start with the majority of the variables and gradually narrow down until only the significant variables are included in the model.</p>
 <div id="model-1" class="section level3">
 <h3>Model 1</h3>
+<pre class="r"><code> model1 &lt;- glm(is_bad ~. -id -loan_status, data = Train, family = &quot;binomial&quot;)
+summary1 = summary(model1)
+summary1</code></pre>
 <pre><code>## 
 ## Call:
 ## glm(formula = is_bad ~ . - id - loan_status, family = &quot;binomial&quot;, 
@@ -566,6 +557,9 @@ _________________________________</p>
 </div>
 <div id="model-2" class="section level3">
 <h3>Model 2</h3>
+<pre class="r"><code> model2 &lt;- glm(is_bad ~ loan_amnt + term_mths + int_rate_percent + installment + grade + annual_inc + total_acc + last_fico_range_high + meet_cred_pol + fico_norm, data = Train, family = &quot;binomial&quot;)
+summary2 = summary(model2)
+summary2</code></pre>
 <pre><code>## 
 ## Call:
 ## glm(formula = is_bad ~ loan_amnt + term_mths + int_rate_percent + 
@@ -608,6 +602,10 @@ _________________________________</p>
 </div>
 <div id="model-3" class="section level3">
 <h3>Model 3</h3>
+<pre class="r"><code>model3 &lt;- glm(is_bad ~ loan_amnt + term_mths + int_rate_percent + grade + annual_inc + total_acc + last_fico_range_high + meet_cred_pol + fico_norm, data = Train, family = &quot;binomial&quot;)
+
+summary3 = summary(model3)
+summary3</code></pre>
 <pre><code>## 
 ## Call:
 ## glm(formula = is_bad ~ loan_amnt + term_mths + int_rate_percent + 
@@ -649,6 +647,10 @@ _________________________________</p>
 </div>
 <div id="model-4" class="section level3">
 <h3>Model 4</h3>
+<pre class="r"><code>model4 &lt;- glm(is_bad ~ loan_amnt + term_mths + purpose + int_rate_percent + grade + annual_inc + total_acc + last_fico_range_high + meet_cred_pol + fico_norm, data = Train, family = &quot;binomial&quot;)
+
+summary4 = summary(model4)
+summary4</code></pre>
 <pre><code>## 
 ## Call:
 ## glm(formula = is_bad ~ loan_amnt + term_mths + purpose + int_rate_percent + 
@@ -703,6 +705,10 @@ _________________________________</p>
 <div id="model-5" class="section level3">
 <h3>Model 5</h3>
 <p>Running this model on the Train_under data to see how it compares:</p>
+<pre class="r"><code>model5 &lt;- glm(is_bad ~ loan_amnt + term_mths + purpose + int_rate_percent + grade + annual_inc + total_acc + last_fico_range_high + meet_cred_pol + fico_norm, data = Train_under, family = &quot;binomial&quot;)
+
+summary5 = summary(model5)
+summary5</code></pre>
 <pre><code>## 
 ## Call:
 ## glm(formula = is_bad ~ loan_amnt + term_mths + purpose + int_rate_percent + 
@@ -754,6 +760,9 @@ _________________________________</p>
 ## Number of Fisher Scoring iterations: 5</code></pre>
 <p>After several iterations, model4 is a good fit and delivers an accurate model as the AIC, residual deviance and NULL deviance have all reduced. However, a stronger model can be achieved using an altered data set (“Train_under”) which has been undersampled. Comparing model 4 to model 5 (where the undersampled data is used), the accuracy has improved based on the AIC score reduction from 24716 in the Train data to 9927.4. Similarly, the goodness of fit of the model has improved as both the NULL deviance and residual deviance have reduced with the use of the Train_under data.</p>
 <p>Getting the exp of the coefficients to make the data more readable:</p>
+<pre class="r"><code>model5_tab &lt;- coef(summary(model5))
+model5_tab[, &quot;Estimate&quot;] &lt;- exp(coef(model5))
+model5_tab</code></pre>
 <pre><code>##                               Estimate   Std. Error      z value
 ## (Intercept)               6.417727e+06 4.090903e-01  38.31568625
 ## loan_amnt                 1.000025e+00 4.677481e-06   5.33638197
@@ -816,49 +825,21 @@ _________________________________</p>
 <div id="step-4---predicting-on-training-data" class="section level2">
 <h2>Step 4 - Predicting on Training Data</h2>
 <p>As model5 was strong, this will be chosen for the preiction stage on the Train data. The na’s will be removed to ensure all columns are of equal length. The resulting model6 will be used to obtain a confusion matrix for analysis.</p>
+<pre class="r"><code>model6 &lt;- glm(is_bad ~ loan_amnt + term_mths + purpose + int_rate_percent + grade + annual_inc + total_acc + last_fico_range_high + meet_cred_pol + fico_norm, data = Train_under, family = &quot;binomial&quot;, na.action = na.exclude)
+summary6 &lt;- summary(model6)</code></pre>
 <p>Use the predict function on the Test data with a threshold value of 0.5 to begin with. This will be adjusted for optimal position.</p>
-<table>
-<thead>
-<tr class="header">
-<th></th>
-<th align="right">FALSE</th>
-<th align="right">TRUE</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>0</td>
-<td align="right">23500</td>
-<td align="right">5360</td>
-</tr>
-<tr class="even">
-<td>1</td>
-<td align="right">913</td>
-<td align="right">4231</td>
-</tr>
-</tbody>
-</table>
-<table>
-<thead>
-<tr class="header">
-<th></th>
-<th align="right">FALSE</th>
-<th align="right">TRUE</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>0</td>
-<td align="right">5932</td>
-<td align="right">1285</td>
-</tr>
-<tr class="even">
-<td>1</td>
-<td align="right">222</td>
-<td align="right">1063</td>
-</tr>
-</tbody>
-</table>
+<pre class="r"><code>predict1 = predict(model6, type = &quot;response&quot;, newdata = Train)
+cmTrain &lt;- table(Train$is_bad, predict1 &gt; 0.5)</code></pre>
+<pre><code>##    
+##     FALSE  TRUE
+##   0 23500  5360
+##   1   913  4231</code></pre>
+<pre class="r"><code>predictTest1 = predict(model6, type = &quot;response&quot;, newdata = Test)
+cmTest &lt;- table(Test$is_bad, predictTest1 &gt; 0.5)</code></pre>
+<pre><code>##    
+##     FALSE TRUE
+##   0  5932 1285
+##   1   222 1063</code></pre>
 <p>This matrix allows for calculations to be made regarding the accuracy of the model.</p>
 </div>
 <div id="step-5---measuring-the-accuracy-of-the-model" class="section level2">
@@ -897,143 +878,53 @@ _________________________________</p>
 <p>In order to investigate the t value further, a good place to start is to determine the area under the curve (AUC) of the ROC curve for the model. The resulting AUC value is an indicator of the discrimination ability of the model. The value ranges from 0.5 to 1 with a higher value representing a better discrimination ability and hence a better predictor.</p>
 <p>For example, an ROC curve with an AUC of 0.5 will have a curve close to 45 degrees and will have little or no discimination ability i.e. the prediction will be 50/50 - pure chance. Whereas a curve that tends towards the top left hand corner of the plot will have an AUC of closer to 1 which indicates perfect discrimination ability. Hence, a high AUC value is more desirable as it indicate a better predictor power for the model in question.</p>
 <p>Using the Train data to get the AUC:</p>
+<pre class="r"><code>library(ROCR)
+pred = ROCR::prediction(predict1, Train$is_bad)
+plotAUC &lt;- as.numeric(performance(pred, &quot;auc&quot;)@y.values)
+plotAUC</code></pre>
 <pre><code>## [1] 0.8914029</code></pre>
 <p>This gives a value of 89.14% - this is higher than our baseline but can still be improved.</p>
 <p>For a bank, the cost of the misclassifiction of default loans is much higher than the cost of the misclassification of successful loans i.e. it is more detrimental to Lending Club’s business and to investors if default loans are predicted as successful rather than successful loans being predicted as default.</p>
 <p>Hence, for this particular model, sensitivity is very important to ensure the number of False negative cases in the model is kept as low as possible. This can be improved by adjusting the t value:</p>
 <p>Investigating overall accuracy, sensivity, and specificity for different t values:</p>
+<pre class="r"><code>predict1 = predict(model6, type = &quot;response&quot;, newdata = Train)
+cm_t1 &lt;- table(Train$is_bad, predict1 &gt; 0.3)
+cm_t2 &lt;- table(Train$is_bad, predict1 &gt; 0.4)
+cm_t3 &lt;- table(Train$is_bad, predict1 &gt; 0.5)
+cm_t4 &lt;- table(Train$is_bad, predict1 &gt; 0.75)</code></pre>
 <div id="t0.3" class="section level4">
 <h4>t&gt;0.3</h4>
-<table>
-<thead>
-<tr class="header">
-<th></th>
-<th align="right">FALSE</th>
-<th align="right">TRUE</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>0</td>
-<td align="right">19406</td>
-<td align="right">9454</td>
-</tr>
-<tr class="even">
-<td>1</td>
-<td align="right">305</td>
-<td align="right">4839</td>
-</tr>
-</tbody>
-</table>
+<pre><code>##    
+##     FALSE  TRUE
+##   0 19406  9454
+##   1   305  4839</code></pre>
 </div>
 <div id="t0.4" class="section level4">
 <h4>t&gt;0.4</h4>
-<table>
-<thead>
-<tr class="header">
-<th></th>
-<th align="right">FALSE</th>
-<th align="right">TRUE</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>0</td>
-<td align="right">21780</td>
-<td align="right">7080</td>
-</tr>
-<tr class="even">
-<td>1</td>
-<td align="right">558</td>
-<td align="right">4586</td>
-</tr>
-</tbody>
-</table>
+<pre><code>##    
+##     FALSE  TRUE
+##   0 21780  7080
+##   1   558  4586</code></pre>
 </div>
 <div id="t0.5" class="section level4">
 <h4>t&gt;0.5</h4>
-<table>
-<thead>
-<tr class="header">
-<th></th>
-<th align="right">FALSE</th>
-<th align="right">TRUE</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>0</td>
-<td align="right">23500</td>
-<td align="right">5360</td>
-</tr>
-<tr class="even">
-<td>1</td>
-<td align="right">913</td>
-<td align="right">4231</td>
-</tr>
-</tbody>
-</table>
+<pre><code>##    
+##     FALSE  TRUE
+##   0 23500  5360
+##   1   913  4231</code></pre>
 </div>
 <div id="t0.75" class="section level4">
 <h4>t&gt;0.75</h4>
-<table>
-<thead>
-<tr class="header">
-<th></th>
-<th align="right">FALSE</th>
-<th align="right">TRUE</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>0</td>
-<td align="right">26365</td>
-<td align="right">2495</td>
-</tr>
-<tr class="even">
-<td>1</td>
-<td align="right">2181</td>
-<td align="right">2963</td>
-</tr>
-</tbody>
-</table>
+<pre><code>##    
+##     FALSE  TRUE
+##   0 26365  2495
+##   1  2181  2963</code></pre>
 <p>Computing these values and compiling the data into a table so that accuracy, sensitivity and specificity can be compared:</p>
-<table>
-<thead>
-<tr class="header">
-<th></th>
-<th align="right">Accuracy</th>
-<th align="right">Sensitivity</th>
-<th align="right">Specificity</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>t=0.3</td>
-<td align="right">71</td>
-<td align="right">94.0</td>
-<td align="right">67</td>
-</tr>
-<tr class="even">
-<td>t=0.4</td>
-<td align="right">85</td>
-<td align="right">89.0</td>
-<td align="right">75</td>
-</tr>
-<tr class="odd">
-<td>t=0.5</td>
-<td align="right">81</td>
-<td align="right">82.0</td>
-<td align="right">81</td>
-</tr>
-<tr class="even">
-<td>t=0.75</td>
-<td align="right">86</td>
-<td align="right">57.6</td>
-<td align="right">91</td>
-</tr>
-</tbody>
-</table>
+<pre><code>##        Accuracy Sensitivity Specificity
+## t=0.3      71.0        94.0        67.0
+## t=0.4      85.0        89.0        75.0
+## t=0.5      81.0        82.0        81.0
+## t=0.75     86.0        57.6        91.0</code></pre>
 <p>The main priority in this case is keeping the number of FN cases as low as possible. FN means that the model predicted the loan was good while in reality, the loan was actaully bad. There will always be some percentage of loans where the loan is predicted good but is actually bad however, we can adjust the t value to ensure this value is kept as low as possible.</p>
 <p>Using t=0.3 gives a relatively low FN rate in comparison to other higher t-values however, the overall percentage accuracy is also lower than the other values. t=0.4 gives a 14% increase in accuracy with a 5% decrease in sensitivity. Somewhere between 0.3 and 0.4 will be the most suitable value for this model. This can be confirmed by visually inspecting the ROC curve.</p>
 </div>
@@ -1042,7 +933,12 @@ _________________________________</p>
 <h3>ROC Curve</h3>
 <p>In the calculations above, the t value of 0.5 was used. In this section, the ROC curve will be graphed which will allow for the t value to be investigated further. When choosing the t value, there is a trade off between sensitivity and specificity calculations. Hence, what is more detrimental to the success of Lending Club from the model - the cost of failing to detect positives or the cost of raising false alarms.</p>
 <p>Graphing the curve:</p>
+<pre class="r"><code>ROCRpred = ROCR::prediction(predict1, Train$is_bad)
+ROCRperf = ROCR::performance(ROCRpred, &quot;tpr&quot;, &quot;fpr&quot;)
+
+p2 &lt;- plot(ROCRperf, colorize = TRUE, print.cutoffs.at=seq(0,1,by=0.1), text.adj = c(-0.2, 1.7))</code></pre>
 <p><img src="data:image/png;base64,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" /><!-- --></p>
+<pre class="r"><code>p2</code></pre>
 <pre><code>## NULL</code></pre>
 <p>The best cutoff to use for this curve that will give the best trade-off between sensitivity and specificity is t=0.35.</p>
 <p>The model can now be evaluated using the Test data set.</p>
@@ -1051,32 +947,17 @@ _________________________________</p>
 <div id="step-7---testing-the-model" class="section level2">
 <h2>Step 7 - Testing the Model</h2>
 <p>Computing the out-of-sample metrics on the Test dataset:</p>
-<table>
-<thead>
-<tr class="header">
-<th></th>
-<th align="right">FALSE</th>
-<th align="right">TRUE</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>0</td>
-<td align="right">5259</td>
-<td align="right">1958</td>
-</tr>
-<tr class="even">
-<td>1</td>
-<td align="right">97</td>
-<td align="right">1188</td>
-</tr>
-</tbody>
-</table>
+<pre class="r"><code>predictTest2 = predict(model6, type = &quot;response&quot;, newdata = Test)
+tableTest &lt;- table(Test$is_bad, predictTest2 &gt; 0.35)</code></pre>
+<pre class="r"><code>tableTest</code></pre>
+<pre><code>##    
+##     FALSE TRUE
+##   0  5259 1958
+##   1    97 1188</code></pre>
 <p>Overall accuracy = 75.7%</p>
 <p>Sensitivity = 92.5%</p>
 <p>Specificity = 72.9%</p>
-<p>At a cutoff of 0.35, the sensitivity is massively improved from 82.7% in the original model to 92.5% in the revised model. This does not come with a massive trade off in overall model accuracy which has dropped by 6.3% from the original model to 75.7%.</p>
-<hr />
+<p>At a cutoff of 0.35, the sensitivity is massively improved from 82.7% in the original model to 92.5% in the revised model. This does not come with a massive trade off in overall model accuracy which has only dropped by 6.3% from the original model to 75.7%.</p>
 <p>Can complete this section by adding the predicted default probabilities to the Train data set:</p>
 <pre class="r"><code>Train$predicted.risk &lt;- predict(model6, type = &quot;response&quot;, newdata = Train)</code></pre>
 </div>
@@ -1087,120 +968,139 @@ _________________________________</p>
 <h3>Determine the expected rate of return on the investment</h3>
 <p>For lending club to better screen applicants in future, the predicted risk of default of the loans can be used to determine how likely each loan is to default. The probability of default can also be used to determine the expected rate of return of the loan. This is considerably more insightful than the interest rate as it takes into account the probability of default rather than relying on factors used to set the interest rate such as FICO score.</p>
 <p>First, derive formula to compute the Expected Rate of Return (ERR):</p>
-<p>This formula is <em>ERR = (1-predicted.risk)<em>((int_rate_percent)/100) + (predicted.risk)</em>(-1))</em></p>
+<p>This formula is <strong>ERR = (1-predicted.risk)<em>((int_rate_percent)/100) + (predicted.risk)</em>(-1))</strong></p>
+<pre class="r"><code>ERR1 &lt;- function(x, y) {
+    ((1-x)*((y)/100) + (x)*(-1))
+}
+
+Train$ERR &lt;- ERR1(Train$predicted.risk, Train$int_rate_percent)</code></pre>
+</div>
+<div id="determine-other-metrics" class="section level3">
+<h3>Determine other metrics</h3>
 <p>Can use the ERR to compute the expected profit. The results will give both positive and negative values with positive indicating an overall profit and negative indicating an overall loss. The overall amount returned is also calculated along with the amount returned based on no default i.e. just going by the interest rate where every loan completes and is fully paid.</p>
-<p>**Profit = ERR*loan_amnt**</p>
-<p>**Amount_Returned = (1+ERR)*(loan_amnt)**</p>
-<p>**Amount_Returned_no_default = (1 + (int_rate/100))*(loan_amnt)**</p>
-<hr />
-<p>These loans can then be investigated further using the ERR metric and default rate in order to set the most suitable threshold for accepting loans - the lower the threshold, the easier it is to get a loan and hence, the more default loans that would be expected to default.</p>
+<pre><code>**Profit = ERR*loan_amnt**
+
+**Amount_Returned = (1+ERR)*(loan_amnt)**
+
+**Amount_Returned_no_default = (1 + (int_rate/100))*(loan_amnt)**</code></pre>
+<pre class="r"><code>Train$profit &lt;- Train$ERR*Train$loan_amnt
+
+Train$amnt_rtrnd &lt;- (1+Train$ERR)*Train$loan_amnt
+
+Train$amnt_rtrnd_no_default &lt;- (1 + (Train$int_rate_percent/100))*(Train$loan_amnt)</code></pre>
+</div>
+<div id="thresholding" class="section level3">
+<h3>Thresholding</h3>
+<p>These loans can then be investigated further using the ERR metric and default rate in order to set the most suitable threshold for accepting loans - the threshold value describes the cut off after which no further loans are accepted.</p>
 <p>Carrying out the thresholding on the Train data set for the variables:</p>
 </div>
 <div id="predicted-risk" class="section level3">
 <h3>Predicted Risk</h3>
-<table>
-<tbody>
-<tr class="odd">
-<td align="left">0%</td>
-<td align="right">0.0000619</td>
-</tr>
-<tr class="even">
-<td align="left">10%</td>
-<td align="right">0.0272965</td>
-</tr>
-<tr class="odd">
-<td align="left">20%</td>
-<td align="right">0.0557503</td>
-</tr>
-<tr class="even">
-<td align="left">30%</td>
-<td align="right">0.0977945</td>
-</tr>
-<tr class="odd">
-<td align="left">40%</td>
-<td align="right">0.1511183</td>
-</tr>
-<tr class="even">
-<td align="left">50%</td>
-<td align="right">0.2232599</td>
-</tr>
-<tr class="odd">
-<td align="left">60%</td>
-<td align="right">0.3233681</td>
-</tr>
-<tr class="even">
-<td align="left">70%</td>
-<td align="right">0.4681397</td>
-</tr>
-<tr class="odd">
-<td align="left">80%</td>
-<td align="right">0.6673448</td>
-</tr>
-<tr class="even">
-<td align="left">90%</td>
-<td align="right">0.8748282</td>
-</tr>
-<tr class="odd">
-<td align="left">100%</td>
-<td align="right">1.0000000</td>
-</tr>
-</tbody>
-</table>
+<pre class="r"><code>Threshold1 &lt;- quantile(Train$predicted.risk, probs = seq(0, 1, 0.01), na.rm = TRUE,
+          names = TRUE, type = 7)
+Threshold1</code></pre>
+<pre><code>##           0%           1%           2%           3%           4% 
+## 6.191001e-05 8.765725e-03 1.119594e-02 1.318290e-02 1.508013e-02 
+##           5%           6%           7%           8%           9% 
+## 1.694701e-02 1.883728e-02 2.076027e-02 2.288549e-02 2.502287e-02 
+##          10%          11%          12%          13%          14% 
+## 2.729646e-02 2.940983e-02 3.206761e-02 3.453869e-02 3.717295e-02 
+##          15%          16%          17%          18%          19% 
+## 4.002020e-02 4.254053e-02 4.557881e-02 4.911771e-02 5.243013e-02 
+##          20%          21%          22%          23%          24% 
+## 5.575031e-02 5.933583e-02 6.305816e-02 6.717516e-02 7.099631e-02 
+##          25%          26%          27%          28%          29% 
+## 7.528466e-02 7.928628e-02 8.338595e-02 8.809292e-02 9.282988e-02 
+##          30%          31%          32%          33%          34% 
+## 9.779449e-02 1.025354e-01 1.075708e-01 1.124970e-01 1.174707e-01 
+##          35%          36%          37%          38%          39% 
+## 1.222933e-01 1.275037e-01 1.330279e-01 1.386368e-01 1.445972e-01 
+##          40%          41%          42%          43%          44% 
+## 1.511183e-01 1.572129e-01 1.636006e-01 1.699230e-01 1.765343e-01 
+##          45%          46%          47%          48%          49% 
+## 1.840080e-01 1.914879e-01 1.982949e-01 2.066236e-01 2.144924e-01 
+##          50%          51%          52%          53%          54% 
+## 2.232599e-01 2.316121e-01 2.404365e-01 2.492688e-01 2.587112e-01 
+##          55%          56%          57%          58%          59% 
+## 2.690772e-01 2.783455e-01 2.897697e-01 3.002619e-01 3.109340e-01 
+##          60%          61%          62%          63%          64% 
+## 3.233681e-01 3.363941e-01 3.495367e-01 3.619136e-01 3.750250e-01 
+##          65%          66%          67%          68%          69% 
+## 3.890417e-01 4.047381e-01 4.199455e-01 4.344466e-01 4.522667e-01 
+##          70%          71%          72%          73%          74% 
+## 4.681397e-01 4.858763e-01 5.039227e-01 5.221060e-01 5.421356e-01 
+##          75%          76%          77%          78%          79% 
+## 5.626302e-01 5.827127e-01 6.023544e-01 6.253415e-01 6.454823e-01 
+##          80%          81%          82%          83%          84% 
+## 6.673448e-01 6.866083e-01 7.075909e-01 7.279865e-01 7.511216e-01 
+##          85%          86%          87%          88%          89% 
+## 7.728559e-01 7.950017e-01 8.175121e-01 8.381093e-01 8.567946e-01 
+##          90%          91%          92%          93%          94% 
+## 8.748282e-01 8.917824e-01 9.088951e-01 9.234325e-01 9.375321e-01 
+##          95%          96%          97%          98%          99% 
+## 9.506059e-01 9.595223e-01 9.672678e-01 9.753540e-01 9.837946e-01 
+##         100% 
+## 1.000000e+00</code></pre>
+<pre class="r"><code>tplot1 &lt;- plot(c(1:1000), quantile(Train$predicted.risk, na.rm = TRUE, probs=c(1:1000)/1000))</code></pre>
 <p><img src="data:image/png;base64,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" /><!-- --></p>
+<pre class="r"><code>tplot1</code></pre>
 <pre><code>## NULL</code></pre>
+<p>As calculated in section 6, the optimal threshold value for the predicted risk is t=0.35. This value corresponds to an accuracy of 76.7% and a sensitivity of 92.5%. Other t-values resulted in a higher accuracy however for the purpose of this project, it is vital that the rate of FN loans (i.e. loans that are default but predicted as good) is kept as low as possible.</p>
+<p>Looking at the quantile distribution above, a t-value of 0.35 corresponds to an acceptance rate of 62%. Hence, the best 62% of loans (i.e. with the lowest probability of default) should be accepted, while the remainder should be rejected.</p>
 </div>
 <div id="err" class="section level3">
 <h3>ERR</h3>
-<table>
-<tbody>
-<tr class="odd">
-<td align="left">0%</td>
-<td align="right">-1.0000000</td>
-</tr>
-<tr class="even">
-<td align="left">10%</td>
-<td align="right">-0.8572956</td>
-</tr>
-<tr class="odd">
-<td align="left">20%</td>
-<td align="right">-0.6226878</td>
-</tr>
-<tr class="even">
-<td align="left">30%</td>
-<td align="right">-0.3970575</td>
-</tr>
-<tr class="odd">
-<td align="left">40%</td>
-<td align="right">-0.2353821</td>
-</tr>
-<tr class="even">
-<td align="left">50%</td>
-<td align="right">-0.1267606</td>
-</tr>
-<tr class="odd">
-<td align="left">60%</td>
-<td align="right">-0.0519874</td>
-</tr>
-<tr class="even">
-<td align="left">70%</td>
-<td align="right">0.0010800</td>
-</tr>
-<tr class="odd">
-<td align="left">80%</td>
-<td align="right">0.0382403</td>
-</tr>
-<tr class="even">
-<td align="left">90%</td>
-<td align="right">0.0635253</td>
-</tr>
-<tr class="odd">
-<td align="left">100%</td>
-<td align="right">0.1895223</td>
-</tr>
-</tbody>
-</table>
+<pre class="r"><code>Threshold2 &lt;- quantile(Train$ERR, probs = seq(0, 1, 0.01), na.rm = TRUE,
+         names = TRUE, type = 7)
+Threshold2</code></pre>
+<pre><code>##           0%           1%           2%           3%           4% 
+## -0.999999975 -0.981303788 -0.971786139 -0.962657900 -0.954227933 
+##           5%           6%           7%           8%           9% 
+## -0.943445305 -0.929149211 -0.912788217 -0.896368323 -0.876955469 
+##          10%          11%          12%          13%          14% 
+## -0.857295621 -0.836218424 -0.815617305 -0.791595641 -0.766539342 
+##          15%          16%          17%          18%          19% 
+## -0.742457208 -0.717033464 -0.691325959 -0.667782584 -0.645072675 
+##          20%          21%          22%          23%          24% 
+## -0.622687806 -0.597979906 -0.574692844 -0.549960103 -0.525836084 
+##          25%          26%          27%          28%          29% 
+## -0.504036475 -0.479462492 -0.457139759 -0.435537727 -0.417062746 
+##          30%          31%          32%          33%          34% 
+## -0.397057520 -0.378014644 -0.359660828 -0.342432094 -0.325969326 
+##          35%          36%          37%          38%          39% 
+## -0.308434916 -0.293517612 -0.278480037 -0.263272672 -0.249746796 
+##          40%          41%          42%          43%          44% 
+## -0.235382053 -0.222609606 -0.209345406 -0.196891765 -0.186752517 
+##          45%          46%          47%          48%          49% 
+## -0.176725953 -0.166160263 -0.156292802 -0.146092408 -0.135301609 
+##          50%          51%          52%          53%          54% 
+## -0.126760586 -0.117933551 -0.110319761 -0.101891933 -0.093520342 
+##          55%          56%          57%          58%          59% 
+## -0.085979523 -0.078712008 -0.071269878 -0.064942143 -0.058458968 
+##          60%          61%          62%          63%          64% 
+## -0.051987366 -0.045309344 -0.039322550 -0.033592280 -0.027910182 
+##          65%          66%          67%          68%          69% 
+## -0.022973570 -0.017326496 -0.012539331 -0.007769097 -0.003310016 
+##          70%          71%          72%          73%          74% 
+##  0.001080032  0.005748775  0.010251537  0.014636389  0.018537507 
+##          75%          76%          77%          78%          79% 
+##  0.022268109  0.026060606  0.029342785  0.032614001  0.035611685 
+##          80%          81%          82%          83%          84% 
+##  0.038240275  0.040720613  0.043138197  0.045470644  0.048097763 
+##          85%          86%          87%          88%          89% 
+##  0.050545706  0.052966787  0.055203463  0.058042558  0.060724930 
+##          90%          91%          92%          93%          94% 
+##  0.063525338  0.066669719  0.069976130  0.074244621  0.078972900 
+##          95%          96%          97%          98%          99% 
+##  0.083906131  0.089724290  0.096354217  0.104953239  0.118380729 
+##         100% 
+##  0.189522253</code></pre>
+<pre class="r"><code>tplot2 &lt;- plot(c(1:1000), quantile(Train$ERR, na.rm = TRUE, probs=c(1:1000)/1000))</code></pre>
 <p><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAqAAAAHgCAMAAABNUi8GAAAAV1BMVEUAAAAAADoAAGYAOjoAOpAAZrY6AAA6ADo6AGY6Ojo6kNtmAABmADpmAGZmtv+QOgCQZgCQ2/+2ZgC2/7a2///bkDrbkJDb////tmb/25D//7b//9v////V5YRfAAAACXBIWXMAAA7DAAAOwwHHb6hkAAATpElEQVR4nO2diXbbOBIAmazlmbGTeMMNx7Kt///OFQiSog4eOJpsAFXvzb7JrMyWrAqOxtHVCUAx1d5vAGAOBAXVICioBkFBNQgKqkFQUA2CgmoQFFSDoKAaBAXVICioBkFBNQgKqkFQUA2Cgmough4ry68d3w3ADZ2gn6/Vwf7b11v1/c9+7wfgCivo58+xk9d/AtgRxqCgGgQF1fSCnoeeLYw/QRWdoE31Yv/l2P8LgAasoF9vg5bN0/tubwbglm4W/zpkP4908qAIWlBQzTAG7ZpQxqCgin4W//lqZ/G0n6AK8qCgGgQF1ZCoB9WQqAfVkGYC1ZCoB9XQgoJqSNSDakjUg2rIg4JqEBRUQ6IeVEOiHlRDmglUQ6IeVEMLCqohUQ+qIVEPqiEPCqpBUFANgoJqEBRU0+dBqwHyoKCIrgX9esNL0Mhls8hh1/cB8JBhDHqkegIohEkSqAZBQTX9LJ45EqhkvBaPpKCOcRePpKCO2zEonT2ogkkSqIZisqAaismCaigmC6phDAqqQVBQDVffgGq4+gZUw8UNoBquvgHV0IKCarj6BlTD1TegGvKgoBoEBdWQqAfVkKgH1bilmZp+v2hDSwub4JSob779Pr/UbBydErQCWIWboOtaUPuqr7fzKyYFXRsXysZR0HWJ+r6drZ/eERSCcBV0VaJ+aGfrA4JCEM6CrqLX8mwzgkIIMoIOI4HJ60QRFFbhLGikRD2CwircJ0lxEvUICqsQSTONYJIEa3mY9HQUNHRHvXv+FUqhOj3SUboFnX8cQE81+t+7/7z656PtqEdQuCaSoCt31C/O9REUrokl6CqW5/oICjdEGYOuY8VIFUHhlhiz+HWsmOsjKKyCFhSU8Dj36JwHvWQy5zYsL871ERSueTwEdW5BVxaTXZzrIyhcMTGJ99ksEqWYLILCFVXbxceYxccpJougcEU7AH0wChXaD7r14yB12v0ZCApasTuIEBR00jWgCAo6sc1nlJWkz1eb2gy7MwRBYcT0LmFaUNifmW3sCAp7048/Yyx1RgNBwdK3nRPHgBAU9mTxnjCZzSJrHwdFU41az6lzlEKbRdY+Dkpl7T2LbBaB7bm3c9IHNovAxjywc+aaBCZJsB0P3ZzTE0FhK6bkXLhkBkFBnGk3l/R0TzP9HM/hr//kBIIWwayay3ae3FvQz9eqm8V/vYVkQhE0a5bEXGnnyauLP3bPD5rMI2ierDJztZ0nxqAQh9ViusjZPjj6C3d5HOyCk5bObtoQHi+sn96DS3UiaMq4i+klZxvK/YV1exuDrXToDYImiJ+X3m7amM4v7G8G87oC3D0u7I6/l0FqdsGdX9jfDMaZpNwJEjPWF+zRxdubwT6e5wah3LCcNArEHN6Kxws/ns/v49vvmRdzw3Ki6BFzeEfRX3jiftAk0eXl5W1Ff+GJG5YTQ6WYw5uL/sITLWg6aNVy9A6jv9DADcv6US7m8Dajv7CFG5ZVk4CYw1uN/sJdHgdrScbMDg9BP55/dcudW8SFaCSmpkVaUMpxqyBFNS0bt6DKfxtZkqqaFrr4nEnbzRYEzZUM5DQICcpmkV3Jw80WGUHZLLIf+bjZwlJnTuTlZgubRXIhPzdbaEFzIFM5DWwWSZ5s3Wxhs0jaZC2ngc0i6ZK9nAYPQU2puWamcYwbFx5TgpwGv4sbPp4Pp5qLG/aiiKazw+/iBnNPPRc37ENBchr8BK3PcnJxww6UJafBp4s/fL4+vXM30+aUZ+fJc5JUffsdWi4p59+pCCXKaSDNlASF2nlC0AQote20+AjaLhMF7lgu47cbTtFyGjwEtbUQm9nbw+LFLZrS7TyF3A8aduqjqF+yH8hp8MuDGkjUi4KeFp8W1CaYpnZ6Ro5bJNg54DUGNX38kTGoENg5xlHQfp+ngS5eAuy8hjyoKrDzFgRVA23nI3wEXS6iEDFuKaDnY7wnSQ3VjiOCnVP4J+pJM0UDPachUb872DkHLejOYOc8jEF3BT2XYBa/H9i5AvKgu4Gda/Afg87SnH/h7RCAIgqPofFcif8sfg6zm9ke+0TQB9C3r8dnkrSYX7KN7NfbeZ6PoHegpws+LWj3a532tG9k66d3BL0FPZ0QmSQNw9T6gKBX0Hq6IjOL77U8t7YIegE93RE6dtyn8b/eELQHPX3wmSS1OXqOHbuBnX745EGHGdAWcTMBPT3xmMX/sE3nut1MTJIM6OmNfwvKbqaV0LmH4H/1DbuZ1oGeQQQk6iuPk8fFfU/oGYjQbiaqHVvQMxShRD3Vjg3oGY7sUmfZtTrRMwIiglLt+ISekaAFlQE9IyE1Bi282jF6xsJf0Gbu4FzZ1Y5pPuPBobn4dF6iZwwkBZ07XpfvF0fzGRUEjQx6xsVR0BUJpAsFCkrzGRsfQa14CHoHesYHQePB5EgASUGjxE0Hmk8JEDQSNJ8yIGgcaD6FQNAYoKcYCBoB9JTDWdDLV4GgFppPSViLDwU9RUHQQPBTFu8uPuhUfDaCoqc0vi3o5K1gseOqBj/F8e7iv94Om8TVDH7KE7CjvvSrb9BzCwIELTzNhJ+bgKCeoOc20MV7QfO5FUySfMDPzfAWtC44zYSf20Gi3hn03BKWOl3Bz00JEPTfImfx6LktzoI23T67wLXOVL9d/NwYV0FNkSRTgOZYTV0LNuLjefIe+0S/XvzcGkdB2+TS5+uvZubisFXbmtP8fvFzc5xn8S/G0n+q+SRod+tiZi0oeu6A19U39WL3/vlq0lB5CYqfe+An6IokaH0eA2QlKH7ugp+ga1Y5m+olJ0HRcx/kBD23n//JR1D83AlBQU01r0wEpXvfDc7FrwA/90N6LT6Hctz4uSNsFlkEP/fEawy6ZdzdQc9d2VjQ9L7t9N5xXggJmk05bvzcGRlBsynHjZ97I5JmyqaYbMWl3nsj0oLmUo679fOEn3siImgeLWg1+Ln3OykZqTFo+uW4u64dP/dFaBaffjlupkc6YCXpMfipBElBEy6FiJ9aQNBH4KcaEPQB+KkHBL0HPxXhIag5abTm2FyqguKnJiQFjRJ3c/BTFQh6A37qAkGvwU9lIOgV+KkNBB2Dn+pA0BH4qQ/W4kfgpz4Q9AJ+KgRBB/BTIwjaU/Xnj/Z+IzAGQTsqzneoBEEt+KkUD0H74xw53W6Hn1pxF/TrLTQH6hR3E+zYEz8V4i5onPvDVKnA/F0vPi3ocgWviHE3AD8V47PU+ddMDa/oceXBT814rcVnNUliAV41Pl38uhIKkeKKg5+qKX6ShJ+6KX2ShJ/KKXySxAK8dny6+Gp5klSf/08zmZos2q3DCBL06pFZi2/9NA3t5IBVhRK0n/oRGYO2VeVtvUTNF9gO7aeGNwOPEZnFm5d0Hiu+ApwEaAp4dPFTzo0wrWejvAXFzySQmSR9vn7/0zahx6lZ0u5W4GcaSG1YPtovf3LRaW8t8DMRSt1Rj5+J4C/oVKHtyHFlwM9UkG5BddaLx89kKLKLJ0GfDiUKWnFCLh02PtWpYfKMnynhIWj99N4c2jvuplFcL54NIknhk6h/OR2f3ifXiAyK68UraMLBAb+1+I+//7T/TKC42jF+JobfbqbPH7/nBFVcLx4/E8NjDGpSm/XLXBevtwWlAU0NnzRTfTAz+blJvNZ68fiZHEJ5UJ314knQp0dJiXoSoAniIehijvPyQlW1OvEzRXwS9WuXkHQJSoI+SfwS9etQJSjjzzSRvPpGk6D074kieXmYIkHxM1V8TnVWEW4P29aUYfyJoKkhdPVNvLgxGMaf+JkcJeRBh/4dP9OjAEHJL6VM/oKy/p402QuKn2mTu6D4mTiZC6rhkB6EEHCzyMz9yRHjhoGfqZN3C4qfyZO1oPiZPgGC/qt9JQk/M8BZ0KZb4/x6U7/UiZ8Z4CqouTK5fno3F9QG1fPawBoa0BxwFLTda/f5+qsJmcE7xfWPgJ854Chou53+6+2f6bu9Y8f1DoCfWeAsqNkLWod1705xfZ+Pn3ngJ+jMvWGx43o+Hj8zwU/Q8IrxGwkqGwXkyVNQGtBsyFFQdohkhLOgl29/thx3VR3aG0imztcJuoOfOSGzFm8uXayrw8wtD3LytGbiZy6IrMWPynRufz9oxRH4nBBZi29HqvZu5c1vWK76FlQqAGyKyFr8ji0o48/MkFmLH8agk7ffCAmEn7khtBa/0yweP7Mjq7V4Ekz5kdNaPH5miPRK0pbluPEzQzJa6sTPHMlHUPzMEqG1+MmniGmEn3kidC5+83Lc+JkpQptFti7HzQQ+V7zGoC1Tq+ynHYrJ4me2+Ahq/ZsRdOty3PiZLyKCbtyC4mfGiAi6bTlu/MwZGUG3LMeNn1kjJGi8uIsPws+skRR0i1KI+Jk5iQuKn7kjudQpLyh+Zo/QUmeLuKD4mT8JC1rhZwE4C9rupm+q6dNGkeNOPwE/S8BV0Mac5jQnij+egwwNlgo/y8B5knTozh4HHkwKtQo/C8FR0LoaE3C2M1Ar9CwFn3Px9s6QPVtQ/CwG1zFo/f2P7eEnt4FEjvvwh/GzGNxn8XYHSBN4d0OIWvhZEJJ5UKHH4WdJJCco0/ey8BB08cRm1Li3P4efZeEhaB1kpmvcmx/Dz8JwF3Ty2nmZuNc/hZ+l4SNo2Cq8Y9zxz+BnebgLatOgm8W9/AR6lojHGPQYuJHJLe7wA/hZJD5dfLXDLB4/CyWNPGiFn6WShKDoWS4JCErzWTLu2+02HoOiZ9nobkEHMfGzVDQLWt0Q9x1AEngI2vfxc118+BXgt3aiZ5n4bBZ5em8O86c6Q68Av7MTP0vFb7PI8el98mraU/AFtugJA36bRT7+/tP+M0HQFeDoCSN8Nou8nD5//J4TNKAFRU+4wmMMaspv1i9zXbz3FeDYCTf4pJnqg5nJz+bpva4AR0+4Q1EeFD3hHr8xqERc7IQHSB/5WF8vvrUSPeEanx31Mqc6Wz1P6AlX6NlR3zegAQ+F/Nh4kjQ3xqTxhHsUzeJP+Al3OG9YjnEo3iUulI2IoCuqKSEorEKmBf16W5pBISisQqiLX7x+BEFhFc6CLnbelqXrRxAUVsEkCVSDoKAaSUG3qBcPmbOboACrcBPUCdeNeRu1qtuE4cNsHKZrQX+Op+7Xf7oDQXMJk8KH6X7487XqMpxfb0v7mRA0lzApfJjRftBucBBpPv8ohCh8p0qjxBJUjBR+Dcqi8GHi/LCaENuF4cNsHGb0w+dx6NN7HePo3GQISfhOlUaJNgb99rt5eo9Tz2sihCh8p0qjRBLUzM3NrSJT5zUjhJCF71RplEiCmsUkI2iUw50AkbhrQeuZu5kAtuZ2DNrEz4MC+HM9i6+qb7/3ey8Ad7A/DlSDoKAaBAXVOB6aA9gWWlBQDYKCahAUVNOPQSNVOwaICy0oqOayWeSHXUOKvFnkKLk41da2fbkKIxTP7lCQjfLxXNmDYaJhmv5Uj2SUrhrcfQj3WHeCxt1udzy/naOUoV9v5yc35ksdwgjFO7aVoWSjmEKpn6/SH6YxzzSGSkb5fG0lug/hEasTtL7kQWNuWLYHQOuFK/F8sZWZz3+jhjBC8dqzBifZKPah0h/GXk84frhAlKOdyNyH8Il114JGZVAo/qMHzn8jhzBC8Zqn/54FlY3y8Vf3+xcNMwgqGOVYvbTjxPsQPrFkJ0n2ty67B7o+f/A+jEy881PNGFQ2yvH7/17b7ks2TN/FS3+YP48+iE+si6DtjCNymsmON8QGoW2I85c6hBGJZzomI6hslMb84k0DJxumn6bIRmkdvA/hE+siaC3QzskLeuznSILqdOcMhKN861oX2TDmW/54lv47LSGowHHODbp4WxdctL9qnynfxduR2XmUJvthhuFgcl18tDtsx0hPkhqbcxCdVzT9lUCykyT7tZ2/QtEwQxu2wYeJPElarI/gg2ya6dQfoJJOM9kWVDaKbSCOwmkmq4h0FCto5DTTYn0EL0QT9WYsdRNGKl4tn6hv+r8DomH6MahslGP0RH2sYrJ3NIJLnV3na54/hBGKZ5c6ZaMc+1US0TD1FlG6YeZ9CPdYbBYB1SAoqOYiaN/Hsx8UFDFK1D+9N/0aLYASrhL1ZsdXw91MoIirRL3ZZ9rtNQVQwdXtdmbLHYKCJi5jULMCVb/QxYMqRmmm+mBm8kziQRPkQUE1CAqqkV6LBwjitgWlhgKo4q6LF9u8CeDBnaA0oaCJO0FlD7EDuHEraHv5CoAW7mbxLCSBJsiDgmoQFFRzn6gnVw+KuD12TK1OUMVoP6g1k+12oAnpK8ABgrhrQakXD5q4qhd/6m8BBFDCbb142k9QBXnQeHSjpKtjh0sFWURKA+QEgsajabcxdDVYLMsFWY70WbMgaDS6Gz7H6xwrCrL0k1N4DIKGY66BPPQXs3c1WNr7gFcVZCHxPAuCBmMSH+bioP4swlUmefm2dtEaKOmDoKH01SeGKhT3gs7Wu+C6tlkQNJResKEKhaOgIuVV8gFBQ+lrGA4toWMXj6CzIGgoK1rQ2UkSgs6CoKGsGIPOFmRhDDoLggZjZvEmqzQ9i58tyMIsfhYEDWecBz0Njebh8ofZgizkQWdB0Gj4FZMUKUGZEQgaj8bnSgHW4udB0Hj4LKuzm2kBBAXVICioBkFBNQgKqkFQUA2CgmoQFFSDoKAaBAXVICioBkFBNQgKqkFQUA2CgmoQFFSDoKAaBAXVICioBkFBNQgKqkFQUM3/AcB6MhY0P+UtAAAAAElFTkSuQmCC" /><!-- --></p>
+<pre class="r"><code>tplot2</code></pre>
 <pre><code>## NULL</code></pre>
+<p>The ERR quantile distribution is slightly different. For example, for the worst 10% of loans, there is an expected loss of 85% form the orignal sum of the loan. The ERR is predicted as negative for the first 69% of loans which means that there will be an overall loss for the worst 69% of accepted loans. Hence, in order to maximise the profit, 100% of loans should be accepted.</p>
+<p>Can also see the quantile distribution for the interest rate, amount returned and amount returned assuming no default.</p>
 </div>
 <div id="interest-rate-1" class="section level3">
 <h3>Interest Rate</h3>
@@ -1364,9 +1264,28 @@ _________________________________</p>
 </div>
 <div id="conclusion-and-next-steps" class="section level1">
 <h1>Conclusion and Next Steps</h1>
+<p>Ultimately, the model above calls into question the acceptance criteria of the loans. The optimal acceptance rate based on the predicted default rate is 62% of loans. From this calculation is would appear that Lending Club’s screening process may need to be refined in order to keep the predicted loan risk at optimal.</p>
+<p>With that said, interestingly, the quantile distribution for the ERR (Expected Rate of Return) tells a different story. 62% of loans accepted results in a rate of return of -3.9%. Whereas if 100% of the loans are accepted, the overall rate of return is 18.9%.</p>
+<p>Taking these two variables into account, it is clear there is a trade-off between the ERR and the Predicted Risk. Hence, it depends on the criteria of Lending Club: to make as much profit overall, or to ensure fewer defaults for the investors.</p>
 <div id="next-steps" class="section level2">
 <h2>Next steps</h2>
 <p>The following are the next steps I would take to further investigate the Lending Club data:</p>
+<ol style="list-style-type: decimal">
+<li>Model comparison
+<ul>
+<li>the logistic regression model has worked well and has an improved accuracy than the baseline as discussed. However, it would be interesting to run a GBM model to see the comparison between the two.</li>
+</ul></li>
+<li>Interest rate
+<ul>
+<li>in terms of the accepted loan data which was used for the purpose of this analysis, the interest rate plays a significant role in both the loan attractiveness to potential investors (i.e. how much profit can be made on a successful loan) and to the probability of default. This is mainly because it is calculated from other variables that describe an applicants credit history such as FICO score.</li>
+<li>hence, it would be interesting to analyse the interest rate and build a model to determine the main variables that impact the calculation of interest rate. This could then be compared to model 6 used in this project, to see how the interest rate impacts the overall probability of default and to determine if the interest rate can be refined in any way.</li>
+</ul></li>
+<li>Rejected data
+<ul>
+<li>the rejected data was wrangled in the early stages of the project and combined with common factors in the accepted data. It would be interesting to compare the 2 data sets to build a model that describes the acceptance criteria of a loan. The expectation would be to refine the acceptance criteria and improve the overall probability of default of the accepted loans.</li>
+<li>this would be done by removing the worst loans from the approved loan data set and adding in better loans from the rejected loan data set that meet the refined acceptance criteria from the model).</li>
+</ul></li>
+</ol>
 </div>
 </div>
 
