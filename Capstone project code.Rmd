@@ -1,0 +1,166 @@
+---
+title: "Untitled"
+author: "Paddy"
+date: "5 July 2017"
+output: html_document
+---
+
+```{r, echo = FALSE}
+knitr::opts_chunk$set(
+  fig.path = "README_figs_final/README-"
+)
+
+library(tidyr)
+library(dplyr)
+library(readr)
+
+
+#Approved Data wrangling
+LC_data <- read_csv("~/Springboard/Capstone project/LC data.csv")
+
+missing_values <- sapply(lc, function(x) {
+  percentage <- sum(is.na(x))/length(x)
+  percentage < 0.2
+  })
+lc <- lc[, missing_values == TRUE]
+lc
+
+unique_values <- sapply(lc, function(x) {
+  length(unique(x[!is.na(x)]))
+  })
+unique_values
+
+unique_values2 <- sapply(lc, function(x) {
+size <- length(unique(x[!is.na(x)]))
+size > 1
+})
+lc <- lc[, unique_values2 == TRUE]
+
+aggregate(data.frame(count = lc$grade), list(value = lc$grade), length)
+
+lc[, c("title", "emp_title")] <- NULL
+
+lc <- lc %>% mutate(purpose = replace(purpose, is.na(purpose), "other"))
+
+table(lc$purpose)
+lc$purpose <- gsub("car|home_improvement|house|wedding", "major purchase", lc1$purpose)
+lc$purpose <- gsub("medical|moving|other|renewable_energy|vacation", "other", lc1$purpose)
+lc$purpose <- gsub("credit_major purchased", "credit_card", lc1$purpose)
+
+ lc$int_rate <- gsub('\\%', "", lc$int_rate)
+ lc$int_rate <- as.numeric(lc$int_rate)
+ 
+ library(data.table)
+ setnames(lc, "int_rate", "int_rate_percent")
+ 
+lc$home_ownership <- gsub('OWN', "MORTGAGE", lc$home_ownership)
+lc$home_ownership <- gsub('NONE', "OTHER", lc$home_ownership)
+
+lc$term <- gsub("months", lc$term)
+lc$term <- as.numeric(lc$term)
+setnames(lc, "term", "term_mths")
+
+lc$emp_length <- gsub("year|years", "", lc$emp_length)
+lc$emp_length <- gsub("< 1", "0", lc$emp_length)
+lc$emp_length <- gsub("\\+", "", lc$emp_length)
+lc$emp_length <- as.numeric(lc$emp_length)
+setnames(lc, "emp_length", "emp_length_yrs")
+
+lc$fico_range_mean <- rowMeans(lc[c('fico_range_low', 'fico_range_high')], na.rm=TRUE)
+
+lc$loan_status = gsub(pattern = "Does not meet the credit policy. Status:", replacement = "", x = (lc$loan_status))
+
+
+bad_indicators <- c("Late (16-30 days)", "Late (31-120 days)", "Default", "Charged Off")
+lc$is_bad <- ifelse(lc$loan_status %in% bad_indicators, 1,
+                    ifelse(lc$loan_status=="", NA,
+                    0))
+
+lc$issue_d = paste("1", as.character(lc$issue_d))
+lc$issue_d = as.Date(lc$issue_d, format = "%d %b-%y")
+
+lc$year_issued <- year(lc$issue_d)
+lc$month_issued <- month(lc$issue_d)
+
+lc$revol_util <- gsub('\\%', "", lc$revol_util)
+lc$revol_util <- as.numeric(lc$revol_util)
+
+numeric_cols <- sapply(lc, is.numeric)
+df.lng <- melt(lc[,numeric_cols], id="is_bad")
+
+write.csv(df.lng, file = "lc_numeric_cols.csv")
+
+lc$fico_norm <- scale(lc$fico_range_mean, center = TRUE, scale = TRUE)
+
+write.csv(lc, file = "lc_formatted.csv")
+
+
+ lc_OHE = lc
+ ohe_feats = c('term_mths', 'grade', 'emp_length_yrs', 'home_ownership', 'verification_status', 'loan_status', 'pymnt_plan', 'purpose', 'delinq_2yrs', 'inq_last_6mths', 'pub_rec', 'pub_rec_bankruptcies')
+ for(f in ohe_feats) {
+     df_dummy1 = acm.disjonctif(as.data.frame(as.factor(unlist(lc[f])))) 
+     lc_OHE = cbind(lc_OHE, df_dummy1)
+
+}
+
+colnames(lc_OHE) = gsub(pattern = "as.factor(unlist(lc[f])).", replacement = "", x = colnames(lc_OHE), fixed = TRUE)
+
+write.csv(lc_OHE, file = "lc_cleaned.csv")
+
+
+
+#Rejected data wrangling
+
+LC_data_rejected <- read_csv("~/Springboard/Capstone project/LC_data_rejected.csv")
+
+unique_values_r <- sapply(lcr, function(x) {
+  length(unique(x[!is.na(x)]))
+  })
+unique_values_r
+
+lcr[, c("Loan Title", "Zip Code", "Policy Code", "State")] <- NULL
+
+lcr$`Employment Length` <- gsub("year|years", "", lcr$`Employment Length`)
+lcr$`Employment Length` <- gsub("< 1", "0", lcr$`Employment Length`)
+lcr$`Employment Length` <- gsub("\\+", "", lcr$`Employment Length`)
+setnames(lcr, "Employment Length", "emp_length_yrs")
+
+lcr$`Debt-To-Income Ratio` <- gsub('\\%', "", lcr$`Debt-To-Income Ratio`)
+ lcr$`Debt-To-Income Ratio` <- as.numeric(lcr$`Debt-To-Income Ratio`)
+ 
+ library(data.table)
+ setnames(lcr, "Debt-To-Income Ratio", "dti")
+ 
+ setnames(lcr, "Amount Requested", "loan_amnt")
+
+setnames(lcr, "Application Date", "issue_d")
+
+setnames(lcr, "Risk_Score", "fico_range_mean")
+
+lcr <- lcr %>% mutate("loan_status" = "NA")
+lcr <- lcr %>% mutate("Status" = "rejected")
+
+lcr$issue_d <- as.Date(lcr$issue_d, format="%d/%m/%Y")
+
+write.csv(lcr, file = "lcr_cleaned.csv")
+
+
+# Combined data set
+
+lc_comparison = lc
+lc_comparison <- select(lc_comparison, emp_length_yrs, loan_amnt, issue_d, fico_range_mean, loan_status, dti)
+lc_comparison <- lc_comparison  %>% mutate("Status" = "approved")
+lc_comp <- union(lcr, lc_comparison)
+
+lc_comp$fico_norm <- scale(lc_comp$fico_range_mean, center = TRUE, scale = TRUE)
+
+write.csv(lc_comp, file = "lc_combined.csv")
+
+
+
+
+
+
+
+
+
