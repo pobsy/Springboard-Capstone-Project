@@ -1039,7 +1039,7 @@ p2
 ```
 ## NULL
 ```
-The best cutoff to use for this curve that will give the best trade-off between sensitivity and specificity is t=0.35. 
+The best cutoff to use for this curve that will give the best trade-off between sensitivity and specificity is t=0.35, as this is the point at which the curve levels off, after which the rate of True Positive values does not increase proportionally with False Positive values. 
 
 
 The model can now be evaluated using the Test data set. 
@@ -1206,7 +1206,7 @@ tplot1
 
 As calculated in section 6, the optimal threshold value for the predicted risk is t=0.35. This value corresponds to an accuracy of 76.7% and a sensitivity of 92.5%. Other t-values resulted in a higher accuracy however for the purpose of this project, it is vital that the rate of FN loans (i.e. loans that are default but predicted as good) is kept as low as possible. 
 
-Looking at the quantile distribution above, a t-value of 0.35 corresponds to an acceptance rate of 62%. Hence, the best 62% of loans (i.e. with the lowest probability of default) should be accepted, while the remainder should be rejected.  
+Looking at the quantile distribution above, a t-value of 0.35 corresponds to 62% i.e. 62% of loans have a predicted risk below the cut off value of 0.35. 
 
 ### ERR
 
@@ -1355,11 +1355,19 @@ Can also see the quantile distribution for the interest rate, amount returned an
 
 # Conclusion and Next Steps
 
-Ultimately, the model above calls into question the acceptance criteria of the loans. The optimal acceptance rate based on the predicted default rate is 62% of loans. From this calculation is would appear that Lending Club's screening process may need to be refined in order to keep the predicted loan risk at optimal. 
+The model which has been built for predicting the probability of default for each loan has been successfully applied to the Lending Club data. The model has outperformed the baseline by 25.7% in terms of accuracy with an optimal sensitivity of 92.5% achieved. 
 
-With that said, interestingly, the quantile distribution for the ERR (Expected Rate of Return) tells a different story. 62% of loans accepted results in a rate of return of -3.9%. Whereas if 100% of the loans are accepted, the overall rate of return is 18.9%. 
+As discussed in section 6 for the optimisation of the t-value, the sensitivity of the model was very important and needed to be as high as possible. The cost of misclassification of a default loan can be much more detrimental to Lending Club than the cost of misclassification of a successful loan. Hence, it was far more important for the model to keep False Negatives as low as possible rather than False Positives, while still keeping the accuracy high. Hence, there was a trade-off between the 3 main metrics: Accuracy, Sensitivity and Specificity.
 
-Taking these two variables into account, it is clear there is a trade-off between the ERR and the Predicted Risk. Hence, it depends on the criteria of Lending Club: to make as much profit overall, or to ensure fewer defaults for the investors.
+Accuracy, Sensitivity and Specificity were all calculated for various t-values to determine the optimal t-value that offered high values for each with a particular focus on the Sensitivity. 
+
+0.3 < t > 0.5 was determined to be the region of the optimal t-value. The ROC curve was then used to visually inspect the relationship between the True Positive and the False Positive rates which showed the curve leveling off from t = 0.35. Hence, t = 0.35 was chosen. 
+
+Ultimately, the model above calls into question the acceptance criteria of the loans. 62% of the loans were good based on the cut off value of t = 0.35 ie. 62% of loans had predicted risk below 0.35. From this calculation is would appear that Lending Club's screening process may need to be refined in order to keep the predicted loan risk below the cutoff value. 
+
+With that said, interestingly, the quantile distribution for the ERR (Expected Rate of Return) tells a different story. 62% of the accepted loans result in a rate of return of -3.9%. Whereas if 100% of the loans are accepted, the overall rate of return is 18.9%. 
+
+Taking these two variables into account, it is clear there is a trade-off between the ERR and the Predicted Risk. Hence, it depends on the criteria of Lending Club: to make as much profit overall, or to ensure fewer defaults for the individual investors.
 
 
 
